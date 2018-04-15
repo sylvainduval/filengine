@@ -7,12 +7,12 @@
 		{
 			"id" : "1234",
 			"rootPath" : "/home/sylvain/data/01-Photos",
-			"fullScanDelay" : 20
+			"fullScanDelay" : 22
 		},
 		{
 			"id" : "5678",
 			"rootPath" : "/home/sylvain/data/06-Cartes de Voeux",
-			"fullScanDelay" : 10
+			"fullScanDelay" : 12
 		}
 	]
 }

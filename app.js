@@ -34,26 +34,42 @@ var app = {
 		//Suppression de toutes les tâches terminées
 		app.task.flushComplete(app);
 		
+		var tasks = app.db.get('tasks');
 		
 		for (var i in app.config.mediaLibraries) {
-			
-			app.task.create(app, {
-				'type': 'fullscan',
-				'mediaLibrary': app.config.mediaLibraries[i].id,
-				'path': '', //Vide pour la racine
-				'recurse': true,
-				'priority': 5,
-				'next': app.config.mediaLibraries[i].fullScanDelay
-			});
+			//Il faut d'abord rechercher si il n'a pas déjà cette tâche en attente...
+			this.createFirstScanTask(tasks, app.config.mediaLibraries[i]);
 		}
-		
-
-			
+	
 		app.execTask();
 
-		
-		
-		
+
+	},
+	
+	createFirstScanTask: function(tasks, mediaLibrary) {
+
+		tasks.findOne({
+			processing: false,
+			complete: false,
+			type: 'fullscan',
+			path: '',
+			mediaLibrary: mediaLibrary.id,
+		}).then((t) => {
+			if (t == null) {
+				app.task.create(app, {
+					'type': 'fullscan',
+					'mediaLibrary': mediaLibrary.id,
+					'path': '', //Vide pour la racine
+					'recurse': true,
+					'priority': 5,
+					'next': mediaLibrary.fullScanDelay
+				});
+			}
+			else {
+				//Mettre à jour avec le nouveau delai s'il a changé
+				tasks.update({_id: t._id}, {$set: {next: mediaLibrary.fullScanDelay }});
+			}
+		});
 	},
 	
 	//Sortie d'un message
