@@ -1,5 +1,6 @@
 {
 	"db": "localhost:27017/filengine",
+	"directorySeparator": "/",
 	"verbose": true,
 	"threads": 2,
 	"mediaLibraries" : 
@@ -7,12 +8,14 @@
 		{
 			"id" : "1234",
 			"rootPath" : "/home/sylvain/data/01-Photos",
-			"fullScanDelay" : 22
+			"fullScanDelay" : 22,
+			"watchers": 1000
 		},
 		{
 			"id" : "5678",
 			"rootPath" : "/home/sylvain/data/06-Cartes de Voeux",
-			"fullScanDelay" : 12
+			"fullScanDelay" : 12,
+			"watchers": 1000
 		}
 	]
 }

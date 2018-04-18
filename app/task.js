@@ -19,9 +19,10 @@ function create(app, params) {
 }
 
 function launch(app) {
-	//app.stdout(null,  'Searching for new task...');
 	
 	var tasks = app.db.get('tasks');
+	
+	
 	
 	
 	tasks.find({
@@ -30,7 +31,6 @@ function launch(app) {
 	
 		if (t.length >= app.config.threads) {
 			app.stdout(null,  'Busy, delaying new task...');
-			return false; //Busy
 		}
 		else {
 			tasks.findOneAndUpdate(
@@ -57,6 +57,10 @@ function launch(app) {
 							
 							//Module de scan
 							var scan = require('./scan.js');
+							
+							//Gestionnaire de taches
+							var watcher = require('./watcher.js');
+							watcher.removeAll(app, doc.mediaLibrary);
 							
 							var s = new scan({
 								app: app,
@@ -107,7 +111,8 @@ function launch(app) {
 								    }, 50);
 							    } else {
 							      app.stdout(doc.mediaLibrary,  'Removing deleted elements done');
-		
+								  watcher.setWatchers(app, doc.mediaLibrary);
+							      
 							      end(app, tasks, doc);
 							    }
 							}
@@ -119,6 +124,11 @@ function launch(app) {
 							checkCounterDir(s, doc);	
 							
 		
+						break;
+						
+						case 'scan' :
+							console.log('scanner le dossier '+doc.path);
+							end(app, tasks, doc);
 						break;
 					}
 				}

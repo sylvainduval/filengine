@@ -8,11 +8,13 @@ function Scan(params) {
 	var fs = require('fs');
 
 	//Directory separator
-	var DS = '/';
+	
 
 	this.mediaLibrary = params.mediaLibrary;
 
 	this.app = params.app;
+	
+	var DS = this.app.config.directorySeparator;
 
 	this.collecDirs = this.app.db.get('lib_'+this.mediaLibrary+'_dirs');
 	this.collecFiles = this.app.db.get('lib_'+this.mediaLibrary+'_files');

@@ -15,6 +15,9 @@ var app = {
 	//Gestionnaire de taches
 	task: require('./app/task.js'),
 	
+	watchers: [],
+
+	
 	//Recherche d'une nouvelle tâche toutes les 2 secondes
 	execTask: function() {
 		setTimeout(function() {
