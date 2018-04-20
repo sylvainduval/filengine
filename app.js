@@ -34,10 +34,15 @@ var app = {
 		//Connexion à la base mongo
 		app.db = monk(app.config.db);
 		
-		//Suppression de toutes les tâches terminées
-		app.task.flushComplete(app);
-		
 		var tasks = app.db.get('tasks');
+		
+		//Abandon de toutes les tâches en cours
+		app.task.cancel(app, tasks);
+		
+		//Suppression de toutes les tâches terminées
+		app.task.flushComplete(app, tasks);
+		
+		
 		
 		for (var i in app.config.mediaLibraries) {
 			//Il faut d'abord rechercher si il n'a pas déjà cette tâche en attente...
@@ -64,13 +69,13 @@ var app = {
 					'mediaLibrary': mediaLibrary.id,
 					'path': '', //Vide pour la racine
 					'recurse': true,
-					'priority': 5,
+					'priority': 4,
 					'next': mediaLibrary.fullScanDelay
 				});
 			}
 			else {
-				//Mettre à jour avec le nouveau delai s'il a changé
-				tasks.update({_id: t._id}, {$set: {next: mediaLibrary.fullScanDelay }});
+				//Mettre à jour avec le nouveau delai s'il a changé et exécuter maintenant
+				tasks.update({_id: t._id}, {$set: {next: mediaLibrary.fullScanDelay, creationDate: new Date("June 28, 1979 09:15:00") }});
 			}
 		});
 	},

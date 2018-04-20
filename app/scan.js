@@ -7,13 +7,10 @@ function Scan(params) {
 
 	var fs = require('fs');
 
-	//Directory separator
-	
-
 	this.mediaLibrary = params.mediaLibrary;
 
 	this.app = params.app;
-	
+
 	var DS = this.app.config.directorySeparator;
 
 	this.collecDirs = this.app.db.get('lib_'+this.mediaLibrary+'_dirs');
@@ -69,113 +66,130 @@ function Scan(params) {
 
 	this.scanDir = function(task, path, filelist) {
 
-		var files = fs.readdirSync(parentThis.rootPath + path);
+		if (fs.existsSync(parentThis.rootPath + path)) {
+			var files = fs.readdirSync(parentThis.rootPath + path);
 
-		filelist = filelist || [];
+			filelist = filelist || [];
 
-		files.forEach(function(file) {
-			var obj = fs.statSync(parentThis.rootPath + path + DS + file);
+			files.forEach(function(file) {
+				var obj = fs.statSync(parentThis.rootPath + path + DS + file);
 
-			if (obj.isDirectory() ) {
-				counterAdd('counterDirs', 'scan');
-				//parentThis.counterDirs.scan++;
-				parentThis.index(path, file, obj, function() {
-					if (task.recurse == true)
-						parentThis.scanDir(task, path + DS + file, filelist);
-
-				});
-			}
-
-		});
-
+				if (obj.isDirectory() ) {
+					counterAdd('counterDirs', 'scan');
+					//parentThis.counterDirs.scan++;
+					parentThis.index(path, file, obj, function() {
+						if (task.recurse == true)
+							parentThis.scanDir(task, path + DS + file, filelist);
+					});
+				}
+			});
+		}
 	}
 
 
 
 	this.scanFiles = function(task, path, filelist) {
+		if (fs.existsSync(parentThis.rootPath + path)) {
+			var files = fs.readdirSync(parentThis.rootPath + path);
 
-		var files = fs.readdirSync(parentThis.rootPath + path);
+			filelist = filelist || [];
 
-		filelist = filelist || [];
+			files.forEach(function(file) {
+				var obj = fs.statSync(parentThis.rootPath + path + DS + file);
 
-		files.forEach(function(file) {
-			var obj = fs.statSync(parentThis.rootPath + path + DS + file);
+				if (obj.isFile() ) {
+					counterAdd('counterFiles', 'scan');
+					parentThis.index(path, file, obj);
+				}
 
-			if (obj.isFile() ) {
-				counterAdd('counterFiles', 'scan');
-				parentThis.index(path, file, obj);
-			}
+				if (obj.isDirectory() ) {
 
-			if (obj.isDirectory() ) {
+					if (task.recurse == true)
+						parentThis.scanFiles(task, path + DS + file, filelist);
+				}
 
-				if (task.recurse == true)
-					parentThis.scanFiles(task, path + DS + file, filelist);
-			}
-
-		});
+			});
+		}
 	}
 
-	this.removeDeleted = function (task) {
-		this.collecFiles.find({}).then((files) => {
+	this.removeDeleted = function (task, path) {
+		if (path != '') {
+			//On recherche le dossier parent du fichier path/name
+			var lastIndex = path.lastIndexOf(DS);
+			var ppath = path.substr(0, lastIndex);
+			var pname = path.substr(lastIndex + 1);
 
-			for (let f of files) {
-				counterAdd('counterRemove', 'scan');
-				if (f.path) {
+		}
+		else {
+			var ppath = '';
+			var pname = "__ROOT__";
+		}
+		this.collecDirs.findOne({path: ppath, name: pname}).then((di) => {
+			var parentId = di._id;
+			if (path != '')
+				var search = {path: parentId}
+			else
+				var search = {}
 
-					this.collecDirs.findOne({_id: f.path}).then((d) => {
-						if (d !== null) {
-							if (d.name == '__ROOT__')
-								d.name = '';
+			this.collecFiles.find(search).then((files) => {
 
-							var p = parentThis.rootPath + d.path + DS + d.name + DS + f.name;
-							if (fs.existsSync(p)) {
+				for (let f of files) {
+					counterAdd('counterRemove', 'scan');
+					if (f.path) {
+						this.collecDirs.findOne({_id: f.path}).then((d) => {
+							if (d !== null) {
+								if (d.name == '__ROOT__')
+									d.name = '';
+
+								var p = parentThis.rootPath + d.path + DS + d.name + DS + f.name;
+								if (fs.existsSync(p)) {
+									counterAdd('counterRemove', 'done');
+								}
+								else {
+									//Supprimer le fichier de la base
+									this.collecFiles.remove({_id: f._id}, {justOne: true}).then(() => {
+										parentThis.app.stdout(parentThis.mediaLibrary,  'Removing file ' + p);
+										counterAdd('counterRemove', 'done');
+									});
+								}
+							}
+							else { //Ne doit pas arriver
 								counterAdd('counterRemove', 'done');
 							}
-							else {
-								//Supprimer le fichier de la base
-								this.collecFiles.remove({_id: f._id}, {justOne: true}).then(() => {
-									parentThis.app.stdout(parentThis.mediaLibrary,  'Removing file ' + p);
-									counterAdd('counterRemove', 'done');
-								});
-							}
-						}
-						else { //Ne doit pas arriver
-							counterAdd('counterRemove', 'done');
-						}
 
 
-					});
-				}
-				else {
-					counterAdd('counterRemove', 'done');
-				}
-
-			}
-
-		});
-
-		this.collecDirs.find({ name: { $not: /^__ROOT__/ }}).then((dirs) => {
-
-			for (let d of dirs) {
-				counterAdd('counterRemove', 'scan');
-
-				var p = parentThis.rootPath + d.path + DS + d.name;
-
-				if (fs.existsSync(p)) {
-					counterAdd('counterRemove', 'done');
-				}
-				else {
-					//Supprimer le dossier de la base
-					this.collecDirs.remove({_id: d._id}, {justOne: true}).then(() => {
-						parentThis.app.stdout(parentThis.mediaLibrary,  'Removing directory ' + p);
+						});
+					}
+					else {
 						counterAdd('counterRemove', 'done');
-					});
+					}
+
 				}
 
-			}
+			});
 
+			this.collecDirs.find({ name: { $not: /^__ROOT__/ }}).then((dirs) => {
+
+				for (let d of dirs) {
+					counterAdd('counterRemove', 'scan');
+
+					var p = parentThis.rootPath + d.path + DS + d.name;
+
+					if (fs.existsSync(p)) {
+						counterAdd('counterRemove', 'done');
+					}
+					else {
+						//Supprimer le dossier de la base
+						this.collecDirs.remove({_id: d._id}, {justOne: true}).then(() => {
+							parentThis.app.stdout(parentThis.mediaLibrary,  'Removing directory ' + p);
+							counterAdd('counterRemove', 'done');
+						});
+					}
+
+				}
+
+			});
 		});
-
 	}
 
 	this.index = function(path, name, obj, callback) {
