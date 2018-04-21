@@ -1,4 +1,5 @@
 {
+	"apiPort": 3000,
 	"db": "localhost:27017/filengine",
 	"directorySeparator": "/",
 	"verbose": true,

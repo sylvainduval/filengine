@@ -2,10 +2,12 @@
 var mongo = require('mongodb');
 var monk = require('monk');
 
-
-
 //Filesystem
 var fs = require('fs');
+
+//API
+var express = require('express'), 
+		api = express();
 
 var app = {
 	
@@ -16,6 +18,8 @@ var app = {
 	task: require('./app/task.js'),
 	
 	watchers: [],
+	
+	routes: null,
 
 	
 	//Recherche d'une nouvelle tâche toutes les 2 secondes
@@ -51,7 +55,13 @@ var app = {
 	
 		app.execTask();
 
-
+		//Démarrage API
+		api.listen(app.config.apiPort);
+		app.stdout(null, "API listening on port: "+app.config.apiPort);
+		
+		app.routes = require('./api/routes/routes');
+		app.routes(app, api);
+		
 	},
 	
 	createFirstScanTask: function(tasks, mediaLibrary) {
@@ -78,6 +88,15 @@ var app = {
 				tasks.update({_id: t._id}, {$set: {next: mediaLibrary.fullScanDelay, creationDate: new Date("June 28, 1979 09:15:00") }});
 			}
 		});
+	},
+	
+	getLibrary: function(mediaLibrary) {
+		for (var i in this.config.mediaLibraries) {
+			if (this.config.mediaLibraries[i].id == mediaLibrary) {
+				return this.config.mediaLibraries[i];
+			}
+		}
+		return false;
 	},
 	
 	//Sortie d'un message

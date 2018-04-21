@@ -22,15 +22,6 @@ function removeAll(app, mediaLibraryID) {
 	}
 }
 
-function getLibrary(app, mediaLibrary) {
-	for (var i in app.config.mediaLibraries) {
-		if (app.config.mediaLibraries[i].id == mediaLibrary) {
-			return app.config.mediaLibraries[i];
-		}
-	}
-	return false;
-}
-
 function isWatched(app, mediaLibraryID, inode) {
 	if (typeof(app.watchers[mediaLibraryID][inode]) != "undefined") {
 		return true;
@@ -133,7 +124,7 @@ function createScanTask(app, mediaLibrary, path, eventType, filename) {
 
 function addWatcher(app, mediaLibrary, path) {
 	if (typeof(mediaLibrary) == 'string')
-		mediaLibrary = getLibrary(app, mediaLibrary);
+		mediaLibrary = app.getLibrary(mediaLibrary);
 
 		var obj = fs.stat(mediaLibrary.rootPath + path, function(err, stats) {
 		    if (err == null) {
@@ -149,7 +140,7 @@ function setWatchers(app, mediaLibrary) {
 
 	var DS = app.config.directorySeparator;
 
-	if (mediaLibrary = getLibrary(app, mediaLibrary)) {
+	if (mediaLibrary = app.getLibrary(mediaLibrary)) {
 
 		app.watchers[mediaLibrary.id] = [];
 
