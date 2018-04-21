@@ -1,5 +1,5 @@
 module.exports = function(app, api) {
-	var filengine = require('../controllers/main');
+	
 	
 	var bodyParser = require('body-parser');
 	
@@ -9,13 +9,15 @@ module.exports = function(app, api) {
 	// parse application/json
 	api.use(bodyParser.json())
 	
-	filengine.setApp(app);
+	var file = require('../controllers/file');
+	
+	file.setApp(app);
 	/*api.route('/files')
 		.get(filengine.get_files);
 		.post(filengine.create_file);*/
 	
 	api.route('/:mediaLibraryId/file/:fileId')
-		.get(filengine.get_file)
-		.post(filengine.test_post);
+		.get(file.get)
+		.post(file.test_post);
 	
 };

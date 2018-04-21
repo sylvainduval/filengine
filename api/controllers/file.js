@@ -13,7 +13,7 @@ exports.setApp = function(ap) {
 	c.setApp(ap);
 }
 
-exports.get_file = function(req, res) {
+exports.get = function(req, res) {
 	var mediaLib = c.getLibrary(req);
 	var id = c.ObjectID(req.params.fileId);
 	
