@@ -7,13 +7,16 @@ var fs = require('fs');
 
 function removeAll(app, mediaLibraryID) {
 
-	if (app.watchers[mediaLibraryID] && app.watchers[mediaLibraryID].length > 0) {
+	var i = 0;
+	
+	if (app.watchers[mediaLibraryID]) {
 
-		for (var i in app.watchers[mediaLibraryID]) {
-			app.watchers[mediaLibraryID][i].close();
-		}
+		Object.keys(app.watchers[mediaLibraryID]).forEach(function (inode) {
+		   app.watchers[mediaLibraryID][inode].close();
+		   i++;
+		});
 
-		app.stdout(mediaLibraryID, 'Deleting '+ app.watchers[mediaLibraryID].length +' previous watchers...');
+		app.stdout(mediaLibraryID, 'Deleting '+ i +' previous watchers...');
 
 		delete app.watchers[mediaLibraryID];
 	}
@@ -26,6 +29,12 @@ function getLibrary(app, mediaLibrary) {
 		}
 	}
 	return false;
+}
+
+function isWatched(app, mediaLibraryID, inode) {
+	if (typeof(app.watchers[mediaLibraryID][inode]) != "undefined") {
+		return true;
+	}
 }
 
 function createScanTask(app, mediaLibrary, path, eventType, filename) {
@@ -69,8 +78,15 @@ function createScanTask(app, mediaLibrary, path, eventType, filename) {
 				collecDirs.findOne({path: ppath, name: pname}).then((di) => {
 					var parentId = di._id;
 					collecFiles.findOneAndUpdate({inode: inode}, {$set: {path: parentId}}).then((f) => {
-						if (f != null) //Le contraire ne doit pas arriver
+						if (f != null) //Le contraire peut arriver si l'élément arrive ici depuis un dossier non surveillé ou non répertorié
 							app.stdout(mediaLibrary.id, 'Moved '+filename+' to '+ di.path + DS + di.name + ', Inode: '+obj.ino);
+						else {
+							app.db.get('tasks').findOne(t).then((d) => {
+								if (d == null) {
+									app.task.create(app, t);
+								}
+							});	
+						}
 					});
 				});
 			}
@@ -80,8 +96,16 @@ function createScanTask(app, mediaLibrary, path, eventType, filename) {
 				collecDirs.findOne({path: ppath, name: pname}).then((di) => {
 					var parentId = di._id;
 					collecDirs.findOneAndUpdate({inode: inode}, {$set: {parent: parentId, name:filename, path: ppath+DS+pname}}).then((f) => {
-						if (f != null) //Le contraire ne doit pas arriver
+						if (f != null) //Le contraire peut arriver si l'élément arrive ici depuis un dossier non surveillé ou non répertorié
 							app.stdout(mediaLibrary.id, 'Moved directory '+filename+' to '+ppath+DS+pname + ', Inode: '+obj.ino);
+						else {
+							t.recurse = true;
+							app.db.get('tasks').findOne(t).then((d) => {
+								if (d == null) {
+									app.task.create(app, t);	
+								}
+							});
+						}
 					});
 				});
 			}
@@ -108,12 +132,16 @@ function createScanTask(app, mediaLibrary, path, eventType, filename) {
 }
 
 function addWatcher(app, mediaLibrary, path) {
-	/*Problème avec les déplacements : le dossier d'origine est scanné, l'objet a disparu, il est retiré de la base... à revoir !*/
-		app.watchers[mediaLibrary.id].push(fs.watch(mediaLibrary.rootPath + path, { encoding: 'buffer' }, (eventType, filename) => {
-			createScanTask(app, mediaLibrary, path, eventType, filename);
+	if (typeof(mediaLibrary) == 'string')
+		mediaLibrary = getLibrary(app, mediaLibrary);
 
-		}));
-
+		var obj = fs.stat(mediaLibrary.rootPath + path, function(err, stats) {
+		    if (err == null) {
+			    app.watchers[mediaLibrary.id][stats.ino] = fs.watch(mediaLibrary.rootPath + path,function(typeOfEvent, nameOfFile){
+					createScanTask(app, mediaLibrary, path, typeOfEvent, nameOfFile);
+				});
+			}
+		});
 }
 
 function setWatchers(app, mediaLibrary) {

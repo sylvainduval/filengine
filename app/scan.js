@@ -6,6 +6,8 @@ function Scan(params) {
 	var monk = require('monk');
 
 	var fs = require('fs');
+		
+	var watcher = require('./watcher.js');
 
 	this.mediaLibrary = params.mediaLibrary;
 
@@ -15,6 +17,7 @@ function Scan(params) {
 
 	this.collecDirs = this.app.db.get('lib_'+this.mediaLibrary+'_dirs');
 	this.collecFiles = this.app.db.get('lib_'+this.mediaLibrary+'_files');
+	
 
 
 	for (let conf of params.app.config.mediaLibraries) {
@@ -125,6 +128,12 @@ function Scan(params) {
 			var pname = "__ROOT__";
 		}
 		this.collecDirs.findOne({path: ppath, name: pname}).then((di) => {
+			if (di == null) {
+				parentThis.app.stdout(parentThis.mediaLibrary, 'Can\'t remove ' + path + ' (Parent not found)');
+				counterAdd('counterRemove', 'done');
+				return false;
+			}
+				
 			var parentId = di._id;
 			if (path != '')
 				var search = {path: parentId}
@@ -222,6 +231,7 @@ function Scan(params) {
 								record.parent = id;
 								//Puis insérer
 								parentThis.collecDirs.insert(record).then(() => {
+									watcher.addWatcher(parentThis.app, parentThis.mediaLibrary, path + DS + name);
 									parentThis.app.stdout(parentThis.mediaLibrary,  'Inserting directory ' + path + DS + name + ', Inode: '+obj.ino);
 									counterAdd('counterDirs', 'done');
 									callback.call(this);
