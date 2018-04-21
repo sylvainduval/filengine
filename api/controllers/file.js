@@ -16,19 +16,17 @@ exports.setApp = function(ap) {
 exports.get = function(req, res) {
 	var mediaLib = c.getLibrary(req);
 	var id = c.ObjectID(req.params.fileId);
+	if (c.checkAuth(req, res) == false) {
+		return c.responseError(res, 'Invalid Token. Please login.');
+	}
 	
 	if (mediaLib && id) {
 		c.collecFiles(mediaLib).findOne({_id: id}).then((d) => {
-			res = c.responseJSON(res, d, 200);
+			return c.responseJSON(res, d, 200);
 		});
 	}
 	else {
-		res = c.responseError(res, 'invalid ID');
+		return c.responseError(res, 'invalid ID');
 	}
 	
-}
-
-exports.test_post = function(req, res) {
-	
-	res.json(req.body);
 }

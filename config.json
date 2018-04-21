@@ -4,6 +4,7 @@
 	"directorySeparator": "/",
 	"verbose": true,
 	"threads": 2,
+	"secretKey": "54AfdMO624dfpMq925Tjpl5Bu",
 	"mediaLibraries" : 
 	[
 		{
