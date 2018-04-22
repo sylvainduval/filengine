@@ -43,7 +43,7 @@ exports.register = function(req, res) {
 				expiresIn: 86400 // expires in 24 hours
 			});
 
-			return c.responseJSON(res, { auth: true, token: token }, 200);
+			return c.responseJSON(res, { auth: true, token: token }, 201);
 		}).catch((err) => {
 			// An error happened while inserting
 			return c.responseError(res, 'There was a problem registering the user.', 500);
@@ -72,7 +72,7 @@ exports.login = function(req, res) {
 					expiresIn: 86400 // expires in 24 hours
 				});
 
-				return c.responseJSON(res, { auth: true, token: token }, 200);
+				return c.responseJSON(res, { success: true, token: token }, 200);
 			}
 		});
 		

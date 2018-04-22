@@ -22,6 +22,13 @@ function removeAll(app, mediaLibraryID) {
 	}
 }
 
+function remove(app, mediaLibraryID, inode) {
+	if (isWatched(app, mediaLibraryID, inode)) {
+		app.watchers[mediaLibraryID][inode].close();
+	}
+	
+}
+
 function isWatched(app, mediaLibraryID, inode) {
 	if (typeof(app.watchers[mediaLibraryID][inode]) != "undefined") {
 		return true;
@@ -164,5 +171,6 @@ function setWatchers(app, mediaLibrary) {
 module.exports = {
 	removeAll: removeAll,
 	setWatchers:setWatchers,
-	addWatcher: addWatcher
+	addWatcher: addWatcher,
+	isWatched: isWatched
 }

@@ -59,6 +59,12 @@ var app = {
 		api.listen(app.config.apiPort);
 		app.stdout(null, "API listening on port: "+app.config.apiPort);
 		
+		/*api.use(function(req, res, next) {
+		  res.header("Access-Control-Allow-Origin", "*");
+		  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+		  next();
+		});*/
+		
 		app.routes = require('./api/routes/routes');
 		app.routes(app, api);
 		

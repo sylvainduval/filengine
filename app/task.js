@@ -3,7 +3,7 @@ var mongo = require('mongodb');
 var monk = require('monk');
 
 
-function create(app, params) {
+function create(app, params, callback) {
 
 	var tasks = app.db.get('tasks');
 
@@ -14,6 +14,17 @@ function create(app, params) {
 
 	tasks.insert(params).then((doc) => {
 		app.stdout(doc.mediaLibrary, 'Creating new Task: ' + doc.type + ', ID: '+ doc._id);
+		
+		if (typeof(callback) == "function") {
+			callback.call(this, doc, null);
+			
+		}
+	}).catch((err) => {
+		// An error happened while inserting
+		if (typeof(callback) == "function") {
+			callback.call(this, false, err);
+			
+		}
 	});
 
 }
@@ -198,11 +209,29 @@ function cancel(app, tasks) {
 	});
 }
 
+function get(app, mediaLibrary, type, path, callback) {
+	
+	var tasks = app.db.get('tasks');
+	
+	tasks.findOne({mediaLibrary: mediaLibrary.id, type: type, path: path},{
+					sort: { creationDate: -1 }
+				}).then((d) => {
+
+		callback.call(this, d, null);	
+
+		}).catch((err) => {
+			// An error happened while inserting
+			callback.call(this, false, err);	
+	});
+	
+}
+
 module.exports = {
 
 	create: create,
 	launch:launch,
 	flushComplete: flushComplete,
-	cancel: cancel
+	cancel: cancel,
+	get: get
 
 }

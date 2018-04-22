@@ -3,6 +3,10 @@ module.exports = function(app, api) {
 	
 	var bodyParser = require('body-parser');
 	
+	//Upload
+	const fileUpload = require('express-fileupload');
+	api.use(fileUpload());
+	
 	// parse application/x-www-form-urlencoded
 	api.use(bodyParser.urlencoded({ extended: false }))
 	
@@ -19,7 +23,8 @@ module.exports = function(app, api) {
 	api.route('/:mediaLibraryId/file/:fileId')
 		.get(file.get);
 	
-	
+	api.route('/:mediaLibraryId/upload/:parentId')
+		.post(file.upload);
 	
 	
 	var user = require('../controllers/user');
