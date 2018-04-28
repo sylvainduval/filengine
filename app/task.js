@@ -42,8 +42,11 @@ function launch(app) {
 
 		if (t.length >= app.config.threads) {
 			app.stdout(null,  'Busy, delaying new task...');
+			app.execTask(false);
 		}
 		else {
+
+			
 			tasks.findOneAndUpdate(
 				{
 					processing: false,
@@ -59,8 +62,10 @@ function launch(app) {
 				}
 				).then((doc) => {
 
-					if (doc == null || !doc.type)
+					if (doc == null || !doc.type) {
+						app.execTask(false);
 						return false;
+					}
 
 
 					switch (doc.type) {
@@ -147,11 +152,19 @@ function launch(app) {
 							end(app, tasks, doc);
 						break;*/
 					}
+					
+					app.execTask(true);
 				}
-			);
+			).catch((err) => {
+				// An error happened
+				app.stdout(null,  err);
+				app.execTask(false);
+			});
 		}
-
-		app.execTask();
+	}).catch((err) => {
+		// An error happened
+		app.stdout(null,  err);
+		app.execTask(false);
 	});
 }
 

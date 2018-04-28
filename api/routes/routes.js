@@ -13,9 +13,22 @@ module.exports = function(app, api) {
 	// parse application/json
 	api.use(bodyParser.json())
 	
+	//Common
+	var c = require('../controllers/c');
+	c.setApp(app);
+	
+	api.use(function (req, res, next) {
+		
+		if (req.originalUrl != '/login' && req.originalUrl !='/register' && c.checkAuth(req, res) == false) {
+			return c.responseError(res, 'Invalid Token. Please login.', 401);
+		}
+		else
+			next();
+	});
+	
 	
 	var file = require('../controllers/file');
-	file.setApp(app);
+
 	/*api.route('/files')
 		.get(filengine.get_files);
 		.post(filengine.create_file);*/
@@ -28,7 +41,7 @@ module.exports = function(app, api) {
 	
 	
 	var user = require('../controllers/user');
-	user.setApp(app);
+
 	
 	api.route('/register')
 		.post(user.register);

@@ -23,10 +23,17 @@ var app = {
 
 	
 	//Recherche d'une nouvelle tâche toutes les 2 secondes
-	execTask: function() {
+	//now = true (envoi immédiat) ou false (envoi après attente)
+	execTask: function(now) {
+		//Si aucune tache n'est en attente, on attend 2 secondes
+		var delay = app.config.taskDelay;
+		if (now == true) {
+			delay = 100;	
+		}
+		
 		setTimeout(function() {
 			app.task.launch(app);
-		}, 1500);
+		}, delay);
 	},
 
 	init: function() {
@@ -53,7 +60,7 @@ var app = {
 			this.createFirstScanTask(tasks, app.config.mediaLibraries[i]);
 		}
 	
-		app.execTask();
+		app.execTask(true);
 
 		//Démarrage API
 		api.listen(app.config.apiPort);

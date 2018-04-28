@@ -4,31 +4,105 @@ var monk = require('monk');
 var jwt = require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
 
+var app;
+
+function setApp(ap) {
+	app = ap;
+}
+
+//Données des sessions courantes. Ex : librairies autorisées.
+var sessions = [];
+
+function extendSession(token) {
+	var n = Math.round(Date.now() / 1000);
+	if (sessions[token]) {
+		sessions[token].expire = n + app.config.apiSessionValidity;
+		return true;
+	}
+	else 
+		return false;
+}
+
+function checkSessionValidity(token) {
+	var n = Math.round(Date.now() / 1000);
+
+	if (sessions[token] && sessions[token].expire > n) {
+		return true;
+	}
+	else 
+		return false;
+}
+
+function responseJSON(res, obj, status) {
+		
+		res.status(status);
+		res.json(obj);
+		
+		return res;
+}
+
+function responseError(res, err, status) {
+	if (typeof(status) == "undefined")
+		status = 400;
+	
+	res.status(status);
+	res.json({error: err});
+	
+	return res;
+}
+
+function storeSession (token, data) {
+	var n = Math.round(Date.now() / 1000);
+	
+	sessions[token] = {
+		expire: (n + app.config.apiSessionValidity), 
+		data: data //libraries, login...
+	}
+	
+	
+	//Nettoyage des sessions expirées
+	for (var i in sessions) {
+		if (sessions[i].expire < n)
+			delete sessions[i];
+	}
+}
+
 
 module.exports = {
 	
-	setApp: function(ap) {
-		this.app = ap;
+	setApp: setApp,
+	
+	app: function() {
+		return app;
 	},
 	
+	storeSession: storeSession,
+	
 	getLibrary: function(req) {
+
 		if (req.params.mediaLibraryId) {
-			return this.app.getLibrary(req.params.mediaLibraryId);
+			
+			var token = req.headers['x-access-token'];
+		
+			if (sessions[token] && sessions[token].data.libraries.indexOf(req.params.mediaLibraryId) !== -1) {
+				return app.getLibrary(req.params.mediaLibraryId);
+			}
 		}
+
 		return false;
 	},
 
 	collecFiles: function(mediaLibrary) {
-		return this.app.db.get('lib_'+mediaLibrary.id+'_files');
+		return app.db.get('lib_'+mediaLibrary.id+'_files');
 	},
 	
 	
 	collecDirs: function(mediaLibrary) {
-		return this.app.db.get('lib_'+mediaLibrary.id+'_dirs');
+		return app.db.get('lib_'+mediaLibrary.id+'_dirs');
 	},
 	
 	collecUsers: function() {
-		return this.app.db.get('users');
+		return app.db.get('users');
 	},
 
 	ObjectID: function(str) {
@@ -45,33 +119,29 @@ module.exports = {
 		if (!token) 
 			return false; //res.status(401).send({ auth: false, message: 'No token provided.' });
 		  
-		return jwt.verify(token, this.app.config.secretKey, function(err, decoded) {
+		return jwt.verify(token, app.config.secretKey, function(err, decoded) {
 		    if (err) 
 		    	return false;/*res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
 		    
 		    res.status(200).send(decoded);*/
-		    else
-		    	return true;
+		    else {
+			    if (checkSessionValidity(token)) {
+				    
+				    //Il faut rafraichir le token prolongé...
+				    extendSession(token);
+			    	return true;
+		    	}
+		    	else {
+			    	//Session expired
+			    	return false;
+			    }
+	
+		    }
 		});
-		
-		
-		
+
 	},
 	
-	responseJSON: function(res, obj, status) {
-		res.status(status);
-		res.json(obj);
-		
-		return res;
-	},
-	responseError: function(res, err, status) {
-		if (typeof(status) == "undefined")
-			status = 400;
-		
-		res.status(status);
-		res.json({error: err});
-		
-		return res;
-	}
+	responseJSON: responseJSON,
+	responseError: responseError
 
 }

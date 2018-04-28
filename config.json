@@ -1,9 +1,11 @@
 {
 	"apiPort": 3000,
+	"apiSessionValidity": 3660,
 	"db": "localhost:27017/filengine",
 	"directorySeparator": "/",
 	"verbose": true,
 	"threads": 2,
+	"taskDelay": 2000,
 	"secretKey": "54AfdMO624dfpMq925Tjpl5Bu",
 	"mediaLibraries" : 
 	[

@@ -13,11 +13,6 @@ var bcrypt = require('bcryptjs');
 var c = require('./c');
 
 
-exports.setApp = function(ap) {
-	c.setApp(ap);
-}
-
-
 // CREATES A NEW USER
 exports.register = function(req, res) {
 	var login = req.body.login ? req.body.login : false;
@@ -39,10 +34,13 @@ exports.register = function(req, res) {
 		.then((user) => {
 
 			// create a token
-			var token = jwt.sign({ id: user._id }, c.app.config.secretKey, {
-				expiresIn: 86400 // expires in 24 hours
+			var token = jwt.sign({ id: user._id }, c.app().config.secretKey);
+			
+			c.storeSession(token, {
+				libraries: ['5678'],
+				login: login
 			});
-
+			
 			return c.responseJSON(res, { auth: true, token: token }, 201);
 		}).catch((err) => {
 			// An error happened while inserting
@@ -68,8 +66,11 @@ exports.login = function(req, res) {
 				return c.responseError(res, 'Authentication failed. Wrong password.', 401);
 			else {
 
-				var token = jwt.sign({ id: user._id }, c.app.config.secretKey, {
-					expiresIn: 86400 // expires in 24 hours
+				var token = jwt.sign({ id: user._id }, c.app().config.secretKey);
+				
+				c.storeSession(token, {
+					libraries: ['5678'],
+					login: login
 				});
 
 				return c.responseJSON(res, { success: true, token: token }, 200);

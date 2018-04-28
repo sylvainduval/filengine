@@ -11,17 +11,15 @@ var watcher = require('../../app/watcher.js');
 //utilitaires communs à tous les controlleurs
 var c = require('./c');
 
-
-exports.setApp = function(ap) {
+//var app;
+/*exports.setApp = function(ap) {
 	c.setApp(ap);
-}
+	//app = ap;
+}*/
 
 exports.get = function(req, res) {
 	var mediaLib = c.getLibrary(req);
 	var id = c.ObjectID(req.params.fileId);
-	if (c.checkAuth(req, res) == false) {
-		return c.responseError(res, 'Invalid Token. Please login.');
-	}
 	
 	if (mediaLib && id) {
 		c.collecFiles(mediaLib).findOne({_id: id}).then((d) => {
@@ -38,11 +36,7 @@ exports.upload = function(req, res) {
 	var mediaLib = c.getLibrary(req);
 	var idParent = c.ObjectID(req.params.parentId);
 	
-	var DS = c.app.config.directorySeparator;
-	
-	if (c.checkAuth(req, res) == false) {
-		return c.responseError(res, 'Invalid Token. Please login.');
-	}
+	var DS = c.app().config.directorySeparator;
 	
 	if (!req.files)
     	return c.responseError(res, 'No files were uploaded.', 400);
@@ -60,8 +54,8 @@ exports.upload = function(req, res) {
 		      return c.responseError(res, err, 500);
 		    
 		    //On retourne la tâche du rescan du dossier
-		    if (watcher.isWatched(c.app, mediaLib.id, d.inode)) {
-				c.app.task.get(c.app, mediaLib, 'scan', d.path + DS + d.name, function(task, err) {
+		    if (watcher.isWatched(c.app(), mediaLib.id, d.inode)) {
+				c.app().task.get(c.app(), mediaLib, 'scan', d.path + DS + d.name, function(task, err) {
 					if (err)
 						return c.responseError(res, err, 500);
 					
@@ -70,7 +64,7 @@ exports.upload = function(req, res) {
 			}
 			else {
 				
-				c.app.task.create(c.app, {
+				c.app().task.create(c.app(), {
 					'type': 'scan',
 					'mediaLibrary': mediaLib.id,
 					'path': d.path + DS + d.name,
