@@ -65,8 +65,6 @@ function Scan(params) {
 	});
 
 
-	//console.log(parentThis.rootPath);
-
 	this.scanDir = function(task, path, filelist) {
 
 		if (fs.existsSync(parentThis.rootPath + path)) {
@@ -88,7 +86,6 @@ function Scan(params) {
 			});
 		}
 	}
-
 
 
 	this.scanFiles = function(task, path, filelist) {

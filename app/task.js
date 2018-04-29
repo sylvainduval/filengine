@@ -181,6 +181,7 @@ function end(app, tasks, obj) {
 			tasks.findOne({
 				processing: false,
 				complete: false,
+				//error: null,
 				type: obj.type,
 				mediaLibrary: obj.mediaLibrary,
 				next: obj.next
@@ -202,7 +203,6 @@ function end(app, tasks, obj) {
 	});
 }
 
-
 function flushComplete(app, tasks) {
 	tasks.remove({complete: true, error: null}).then(() => {
 		app.stdout(null, 'Flushing complete tasks');
@@ -217,7 +217,7 @@ function cancel(app, tasks) {
 			app.stdout(null, 'Aborting '+d.length+' tasks');
 
 			for (var t in d)
-				tasks.findOneAndUpdate({_id: d[t]._id}, {$set: {processing: false, error: 'Aborted'}});
+				tasks.findOneAndUpdate({_id: d[t]._id}, {$set: {complete: true, processing: false, error: 'Aborted'}});
 		}
 	});
 }

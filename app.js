@@ -12,7 +12,7 @@ var express = require('express'),
 var app = {
 	
 	//Configuration des mediathèques
-	config: JSON.parse(fs.readFileSync('config.json')),
+	config: {},
 	
 	//Gestionnaire de taches
 	task: require('./app/task.js'),
@@ -20,7 +20,21 @@ var app = {
 	watchers: [],
 	
 	routes: null,
+	
+	loadConfig: function(cb) {
+		
+		fs.readFile('config.json', 'utf8', function (err,data) {
+		  if (err) {
+			  console.log(err);
+			  process.exit();
+		  }
 
+		  app.config = JSON.parse(data);
+		  
+		  if (typeof(cb) == 'function')
+		  	cb.call(this);
+		});
+	},
 	
 	//Recherche d'une nouvelle tâche toutes les 2 secondes
 	//now = true (envoi immédiat) ou false (envoi après attente)
@@ -38,43 +52,45 @@ var app = {
 
 	init: function() {
 		
-		app.stdout(null,'------------------------------------------------------------');
-		app.stdout(null,'*********** STARTING FILENGINE...... Ignition! *************');
-		app.stdout(null,'------------------------------------------------------------');
-		
-		//Connexion à la base mongo
-		app.db = monk(app.config.db);
-		
-		var tasks = app.db.get('tasks');
-		
-		//Abandon de toutes les tâches en cours
-		app.task.cancel(app, tasks);
-		
-		//Suppression de toutes les tâches terminées
-		app.task.flushComplete(app, tasks);
-		
-		
-		
-		for (var i in app.config.mediaLibraries) {
-			//Il faut d'abord rechercher si il n'a pas déjà cette tâche en attente...
-			this.createFirstScanTask(tasks, app.config.mediaLibraries[i]);
-		}
-	
-		app.execTask(true);
+		app.loadConfig(function() {
 
-		//Démarrage API
-		api.listen(app.config.apiPort);
-		app.stdout(null, "API listening on port: "+app.config.apiPort);
+			app.stdout(null,'------------------------------------------------------------');
+			app.stdout(null,'*********** STARTING FILENGINE...... Ignition! *************');
+			app.stdout(null,'------------------------------------------------------------');
 		
-		/*api.use(function(req, res, next) {
-		  res.header("Access-Control-Allow-Origin", "*");
-		  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-		  next();
-		});*/
+			//Connexion à la base mongo
+			app.db = monk(app.config.db);
+			
+			var tasks = app.db.get('tasks');
+			
+			//Abandon de toutes les tâches en cours
+			app.task.cancel(app, tasks);
+			
+			//Suppression de toutes les tâches terminées
+			app.task.flushComplete(app, tasks);
+
+			
+			for (var i in app.config.mediaLibraries) {
+				//Il faut d'abord rechercher si il n'a pas déjà cette tâche en attente...
+				app.createFirstScanTask(tasks, app.config.mediaLibraries[i]);
+			}
 		
-		app.routes = require('./api/routes/routes');
-		app.routes(app, api);
-		
+			app.execTask(true);
+	
+			//Démarrage API
+			api.listen(app.config.apiPort);
+			app.stdout(null, "API listening on port: "+app.config.apiPort);
+			
+			/*api.use(function(req, res, next) {
+			  res.header("Access-Control-Allow-Origin", "*");
+			  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+			  next();
+			});*/
+			
+			app.routes = require('./api/routes/routes');
+			app.routes(app, api);
+			
+		});	
 	},
 	
 	createFirstScanTask: function(tasks, mediaLibrary) {
@@ -83,6 +99,7 @@ var app = {
 			processing: false,
 			complete: false,
 			type: 'fullscan',
+			//error: null,
 			path: '',
 			mediaLibrary: mediaLibrary.id,
 		}).then((t) => {
@@ -125,8 +142,7 @@ var app = {
 			
 		console.log(str);
 	}
-	
-	
+
 }
 
 app.init();
