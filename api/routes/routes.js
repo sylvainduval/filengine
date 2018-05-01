@@ -19,7 +19,8 @@ module.exports = function(app, api) {
 
 	api.use(function (req, res, next) {
 
-		if (req.originalUrl != '/login' && req.originalUrl !='/register' && c.checkAuth(req, res) == false) {
+		if ( req.originalUrl != '/login' && req.originalUrl !='/register' && c.checkAuth(req, res) == false) {
+			
 			return c.responseError(res, 'Invalid Token. Please login.', 401);
 		}
 		else
@@ -50,6 +51,10 @@ module.exports = function(app, api) {
 		.post(user.login);
 
 	api.route('/user/:userId/libraries')
-		.get(user.getLibraries)
-		.post(user.setLibraries);
+		.get(user.getLibraries);
+		//.put(user.setLibraries);
+		
+	api.route('/user/:userId')
+		.get(user.getParams)
+		.put(user.setParams);
 };

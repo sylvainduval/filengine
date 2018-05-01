@@ -67,6 +67,14 @@ function storeSession (token, data) {
 	}
 }
 
+function getSession(req) {
+	var token = req.headers['x-access-token'];
+	
+	if (sessions[token]) 
+		return sessions[token].data;
+	else
+		return false;
+}
 
 module.exports = {
 
@@ -77,6 +85,8 @@ module.exports = {
 	},
 
 	storeSession: storeSession,
+	
+	getSession: getSession, 
 
 	getLibrary: function(req) {
 

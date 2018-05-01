@@ -81,6 +81,7 @@ var app = {
 			api.listen(app.config.apiPort);
 			app.stdout(null, "API listening on port: "+app.config.apiPort);
 			
+			app.createFirstApiUser();
 			/*api.use(function(req, res, next) {
 			  res.header("Access-Control-Allow-Origin", "*");
 			  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -116,6 +117,14 @@ var app = {
 			else {
 				//Mettre à jour avec le nouveau delai s'il a changé et exécuter maintenant
 				tasks.update({_id: t._id}, {$set: {next: mediaLibrary.fullScanDelay, creationDate: new Date("June 28, 1979 09:15:00") }});
+			}
+		});
+	},
+	
+	createFirstApiUser: function() {
+		app.db.get('users').findOne({login: 'admin'}).then((u) => {
+			if (u == null) {
+				app.db.get('users').insert({login: "admin", email: "admin@admin.com", password: "$2a$08$JuRqBV75ZXt9O6pH0UPRve3BULB/VIeFw64o5SLpskJvLmfXLzfCa", isAdmin: true, isSuperAdmin: true});
 			}
 		});
 	},
