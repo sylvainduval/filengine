@@ -68,17 +68,24 @@ exports.login = function(req, res) {
 				
 				//Les super Admin ont droit à toutes les librairies
 				if (user.isSuperAdmin) {
+					user.isContributor = true;
 					user.libraries = [];
 					for (var i in c.app().config.mediaLibraries)
 						user.libraries.push(c.app().config.mediaLibraries[i].id);
 				}
+				
+				if (user.isAdmin) {
+					user.isContributor = true;
+				}
+				
 
 				c.storeSession(token, {
 					id: user._id.toString(),
 					libraries: user.libraries,
 					login: login,
 					isAdmin: user.isAdmin ? user.isAdmin : false,
-					isSuperAdmin: user.isSuperAdmin ? user.isSuperAdmin : false
+					isSuperAdmin: user.isSuperAdmin ? user.isSuperAdmin : false,
+					isContributor: user.isContributor ? user.isContributor : false
 				});
 
 				return c.responseJSON(res, { success: true, token: token }, 200);
@@ -115,11 +122,12 @@ exports.getLibraries = function(req, res) {
 }
 
 exports.setParams = function(req, res) {
-	const id        = c.ObjectID(req.params.userId); //Gérer le droit....
-	const libraries = req.body.libraries ? JSON.parse(decodeURIComponent(req.body.libraries)) : null;
-	const isAdmin   = req.body.isAdmin   ? req.body.isAdmin : null;
-	const email     = req.body.email && req.body.email != null       ? req.body.email : null;
-	const password  = req.body.password && req.body.password != null ? bcrypt.hashSync(req.body.password, 8) : null;
+	const id            = c.ObjectID(req.params.userId); //Gérer le droit....
+	const libraries     = req.body.libraries     ? JSON.parse(decodeURIComponent(req.body.libraries)) : null;
+	const isAdmin       = req.body.isAdmin       ? req.body.isAdmin : null;
+	const isContributor = req.body.isContributor ? req.body.isContributor : null;
+	const email         = req.body.email && req.body.email != null       ? req.body.email : null;
+	const password      = req.body.password && req.body.password != null ? bcrypt.hashSync(req.body.password, 8) : null;
 
 	//Seul le user lui-même ou un admin peut éditer un user
 	if (c.getSession(req).isAdmin == false && c.getSession(req).id != id)
@@ -129,10 +137,12 @@ exports.setParams = function(req, res) {
 
 	var update = {}
 
+	var sessLib = c.getSession(req).libraries;
+	
 	if (libraries !== null && libraries.length > 0) {
 		
 		//Ce user doit lui-même avoir accès aux librairies qu'il veut autoriser, ou être super admin...
-		var sessLib = c.getSession(req).libraries;
+		
 		
 		for (var i in libraries) { //Nouvelles librairies demandées
 			var found = false;
@@ -159,14 +169,44 @@ exports.setParams = function(req, res) {
 	if (email != null)
 		update.email = email;
 		
+	//Seul un admin peut modifier le droit isContributor
+	if (isContributor !== null && c.getSession(req).isAdmin == true)
+		update.isContributor = isContributor == 1 ? true : false;
+		
 	//Seul un admin ou le user lui-même peut modifier un mot de passe
 	if (password != null && (c.getSession(req).isAdmin == true || c.getSession(req).id == id)) 
 		update.password = password;
-		
+	
 	if (Object.keys(update).length === 0 && update.constructor === Object)
 		return c.responseError(res, 'Nothing to change', 200);	
 	
-	c.collecUsers().findOneAndUpdate(
+	
+	c.collecUsers().findOne(
+		{
+			_id: id
+		}).then((u) => {
+			
+		if (u == null)
+			return c.responseError(res, 'User not found', 404);
+	
+		//Un user, même admin (mais pas super admin) ne peut modifier un autre user que s'ils partagent les mêmes librairies
+		//toutes les librairies du modifié (u.libraries) doivent donc être déjà accessibles au modifieur (être dans c.getSession(req).libraries)
+		if (c.getSession(req).isSuperAdmin == false && u.libraries) {
+			var found = 0;
+			for (var j in u.libraries) {
+				for (var i in sessLib) {
+				
+					if (sessLib[i] == u.libraries[j])
+						found++;
+				}
+			}
+			
+			if (found < u.libraries.length)
+				return c.responseError(res, 'Not allowed to edit this user (libraries mismatch)', 403);
+		}
+
+		//Exécution de la mise à jour
+		c.collecUsers().findOneAndUpdate(
 		{
 			_id: id
 		},
@@ -178,8 +218,14 @@ exports.setParams = function(req, res) {
 			
 			return c.responseJSON(res, { success: true, data: user }, 200);
 
+		}).catch((err) => {
+				return c.responseError(res, '(1) Can\t edit user '+id, 400);
+		});
+		
+		
 	}).catch((err) => {
-			return c.responseError(res, 'Can\t edit user '+id, 400);
+		console.log(err);
+			return c.responseError(res, '(2) Can\t edit user '+id, 400);
 	});
 
 }
