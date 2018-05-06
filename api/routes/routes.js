@@ -1,10 +1,27 @@
-module.exports = function(app, api) {
+//API
+var express = require('express'),
+		api = express();
+		
+var bodyParser = require('body-parser');
+		
+const fileUpload = require('express-fileupload');
 
+//Common
+var c = require('../includes/common');
 
-	var bodyParser = require('body-parser');
+var core = require('../../app/core');
+
+var file = require('../controllers/file');
+var user = require('../controllers/user');
+
+module.exports = function() {
+	
+	//Démarrage API
+	api.listen(core.config().apiPort);
+	core.stdout(null, "API listening on port: "+core.config().apiPort);
+	
 
 	//Upload
-	const fileUpload = require('express-fileupload');
 	api.use(fileUpload());
 
 	// parse application/x-www-form-urlencoded
@@ -12,10 +29,6 @@ module.exports = function(app, api) {
 
 	// parse application/json
 	api.use(bodyParser.json())
-
-	//Common
-	var c = require('../includes/common');
-	c.setApp(app);
 
 	api.use(function (req, res, next) {
 
@@ -28,11 +41,6 @@ module.exports = function(app, api) {
 	});
 
 
-	var file = require('../controllers/file');
-
-	/*api.route('/files')
-		.get(filengine.get_files);
-		.post(filengine.create_file);*/
 
 	api.route('/:mediaLibraryId/file/:fileId')
 		.get(file.get);
@@ -41,7 +49,7 @@ module.exports = function(app, api) {
 		.post(file.upload);
 
 
-	var user = require('../controllers/user');
+	
 
 
 	api.route('/register')
@@ -56,5 +64,6 @@ module.exports = function(app, api) {
 		
 	api.route('/user/:userId')
 		.get(user.getParams)
-		.put(user.setParams);
+		.put(user.setParams)
+		.delete(user.delete);
 };

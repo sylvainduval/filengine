@@ -1,41 +1,51 @@
 //Database
-var mongo = require('mongodb');
-var monk = require('monk');
+//var mongo = require('mongodb');
+//var monk = require('monk');
 var fs = require('fs');
 
-//Les watchers sont dans app.watchers[mediaLibrary ID][]
+var File = require('../models/file'); // get our mongoose model
+var Dir  = require('../models/dir');
+var Task = require('../models/task');
 
-function removeAll(app, mediaLibraryID) {
+//Gestionnaire de taches
+var taskManager = require('./taskmanager');
+
+var core = require('./core');
+
+//Les watchers sont stockés dans watchers[mediaLibrary ID][]
+var watchers = [];
+
+function removeAll(mediaLibraryID) {
 
 	var i = 0;
-	
-	if (app.watchers[mediaLibraryID]) {
 
-		Object.keys(app.watchers[mediaLibraryID]).forEach(function (inode) {
-		   app.watchers[mediaLibraryID][inode].close();
+	if (watchers[mediaLibraryID]) {
+
+		Object.keys(watchers[mediaLibraryID]).forEach(function (inode) {
+		   watchers[mediaLibraryID][inode].close();
 		   i++;
 		});
 
-		app.stdout(mediaLibraryID, 'Deleting '+ i +' previous watchers...');
+		core.stdout(mediaLibraryID, 'Deleting '+ i +' previous watchers...');
 
-		delete app.watchers[mediaLibraryID];
+		delete watchers[mediaLibraryID];
 	}
 }
 
-function remove(app, mediaLibraryID, inode) {
-	if (isWatched(app, mediaLibraryID, inode)) {
-		app.watchers[mediaLibraryID][inode].close();
+function remove(mediaLibraryID, inode) {
+	if (isWatched(mediaLibraryID, inode)) {
+		watchers[mediaLibraryID][inode].close();
 	}
-	
+
 }
 
-function isWatched(app, mediaLibraryID, inode) {
-	if (typeof(app.watchers[mediaLibraryID][inode]) != "undefined") {
+function isWatched(mediaLibraryID, inode) {
+	if (typeof(watchers[mediaLibraryID][inode]) != "undefined") {
 		return true;
 	}
 }
 
-function createScanTask(app, mediaLibrary, path, eventType, filename) {
+function createScanTask(mediaLibrary, path, eventType, filename) {
 
 	var t = {
 		'type': 'scan',
@@ -47,7 +57,7 @@ function createScanTask(app, mediaLibrary, path, eventType, filename) {
 		'complete' : false
 	}
 
-	var DS = app.config.directorySeparator;
+	var DS = core.config().directorySeparator;
 
 
 	if (eventType == 'rename') { // déplacement ou suppression
@@ -57,8 +67,6 @@ function createScanTask(app, mediaLibrary, path, eventType, filename) {
 			var obj = fs.statSync(fullpath);
 
 			var inode = obj.ino;
-			var collecDirs = app.db.get('lib_'+mediaLibrary.id+'_dirs');
-			var collecFiles = app.db.get('lib_'+mediaLibrary.id+'_files');
 
 			if (path != '') {
 				//On recherche le dossier parent du fichier path/name
@@ -73,46 +81,57 @@ function createScanTask(app, mediaLibrary, path, eventType, filename) {
 
 			if (obj.isFile() ) {
 				//Rechercher dans collecDirs l'ID du dossier
-				collecDirs.findOne({path: ppath, name: pname}).then((di) => {
-					var parentId = di._id;
-					collecFiles.findOneAndUpdate({inode: inode}, {$set: {path: parentId}}).then((f) => {
-						if (f != null) //Le contraire peut arriver si l'élément arrive ici depuis un dossier non surveillé ou non répertorié
-							app.stdout(mediaLibrary.id, 'Moved '+filename+' to '+ di.path + DS + di.name + ', Inode: '+obj.ino);
-						else {
-							app.db.get('tasks').findOne(t).then((d) => {
-								if (d == null) {
-									app.task.create(app, t);
+				Dir.lib(mediaLibrary).findOne({path: ppath, name: pname}, function(err, di) {
+					if (!err) {
+						var parentId = di._id;
+						File.lib(mediaLibrary).findOneAndUpdate({inode: inode}, {$set: {path: parentId}}, function(err, f) {
+							if (!err) {
+								if (f != null) //Le contraire peut arriver si l'élément arrive ici depuis un dossier non surveillé ou non répertorié
+									core.stdout(mediaLibrary.id, 'Moved '+filename+' to '+ di.path + DS + di.name + ', Inode: '+obj.ino);
+								else {
+									Task.findOne(t, function(err, d) {
+										if (!err && d == null) {
+											taskManager.create(t);
+										}
+									});
 								}
-							});	
-						}
-					});
+							}
+						});
+
+					}
 				});
 			}
 
 			if (obj.isDirectory() ) {
 				//Rechercher dans collecDirs l'ID du dossier parent
-				collecDirs.findOne({path: ppath, name: pname}).then((di) => {
+				Dir.lib(mediaLibrary).findOne({path: ppath, name: pname}, function (err, di) {
 					var parentId = di._id;
-					collecDirs.findOneAndUpdate({inode: inode}, {$set: {parent: parentId, name:filename, path: ppath+DS+pname}}).then((f) => {
-						if (f != null) //Le contraire peut arriver si l'élément arrive ici depuis un dossier non surveillé ou non répertorié
-							app.stdout(mediaLibrary.id, 'Moved directory '+filename+' to '+ppath+DS+pname + ', Inode: '+obj.ino);
-						else {
-							t.recurse = true;
-							app.db.get('tasks').findOne(t).then((d) => {
-								if (d == null) {
-									app.task.create(app, t);	
+					Dir.lib(mediaLibrary).findOneAndUpdate(
+						{inode: inode},
+						{$set: {parent: parentId, name:filename, path: ppath+DS+pname}},
+						function (err, f) {
+							if (!err) {
+								if (f != null) //Le contraire peut arriver si l'élément arrive ici depuis un dossier non surveillé ou non répertorié
+									core.stdout(mediaLibrary.id, 'Moved directory '+filename+' to '+ppath+DS+pname + ', Inode: '+obj.ino);
+								else {
+									t.recurse = true;
+									Task.findOne(t, function(err, d) {
+										if (!err && d == null) {
+											taskManager.create(t);
+										}
+									});
 								}
-							});
+							}
 						}
-					});
+					);
 				});
 			}
 
 		}
 		else { //Emplacement d'origine qui n'existe plus, on scanne
-			app.db.get('tasks').findOne(t).then((d) => {
-				if (d == null) {
-					app.task.create(app, t);
+			Task.findOne(t, function(err, d) {
+				if (!err && d == null) {
+					taskManager.create(t);
 				}
 			});
 
@@ -120,49 +139,53 @@ function createScanTask(app, mediaLibrary, path, eventType, filename) {
 	}
 	else { //change
 
-
-		app.db.get('tasks').findOne(t).then((d) => {
-			if (d == null) {
-				app.task.create(app, t);
+		Task.findOne(t, function (err, d) {
+			if (!err && d == null) {
+				taskManager.create(t);
 			}
 		});
 	}
 }
 
-function addWatcher(app, mediaLibrary, path) {
+function addWatcher(mediaLibrary, path) {
 	if (typeof(mediaLibrary) == 'string')
-		mediaLibrary = app.getLibrary(mediaLibrary);
+		mediaLibrary = core.getLibrary(mediaLibrary);
 
 		var obj = fs.stat(mediaLibrary.rootPath + path, function(err, stats) {
 		    if (err == null) {
-			    app.watchers[mediaLibrary.id][stats.ino] = fs.watch(mediaLibrary.rootPath + path,function(typeOfEvent, nameOfFile){
-					createScanTask(app, mediaLibrary, path, typeOfEvent, nameOfFile);
+			    watchers[mediaLibrary.id][stats.ino] = fs.watch(mediaLibrary.rootPath + path,function(typeOfEvent, nameOfFile){
+					createScanTask(mediaLibrary, path, typeOfEvent, nameOfFile);
 				});
 			}
 		});
 }
 
-function setWatchers(app, mediaLibrary) {
-	app.stdout(mediaLibrary,  'Setting new watchers...');
+function setWatchers(mediaLibrary) {
+	core.stdout(mediaLibrary,  'Setting new watchers...');
 
-	var DS = app.config.directorySeparator;
+	var DS = core.config().directorySeparator;
 
-	if (mediaLibrary = app.getLibrary(mediaLibrary)) {
+	if (mediaLibrary = core.getLibrary(mediaLibrary)) {
 
-		app.watchers[mediaLibrary.id] = [];
+		watchers[mediaLibrary.id] = [];
 
 		var rootPath = mediaLibrary.rootPath;
 
-		var collecDirs = app.db.get('lib_'+mediaLibrary.id+'_dirs');
-
-		collecDirs.find({}, { limit : mediaLibrary.watchers, sort : { modificationDate : -1 } }).then((d) => {
-			for (var i in d) {
-				var name = d[i].name == '__ROOT__' ? '' : DS + d[i].name;
-				addWatcher(app, mediaLibrary, d[i].path + name);
-
-
+		Dir.lib(mediaLibrary).find(
+			{},
+			{},
+			{ limit : mediaLibrary.watchers, sort : { modificationDate : -1 } },
+			function (err, d) {
+				if (!err) {
+					for (var i in d) {
+						var name = d[i].name == '__ROOT__' ? '' : DS + d[i].name;
+						addWatcher(mediaLibrary, d[i].path + name);
+					}
+				}
+				else
+					throw err;
 			}
-		});
+		);
 
 	}
 }
