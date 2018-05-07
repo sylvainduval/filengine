@@ -83,7 +83,8 @@ core.loadConfig(function() {
 	
 	for (var i in core.config().mediaLibraries) {
 		//Il faut d'abord rechercher si il n'a pas déjà cette tâche en attente...
-		createFirstScanTask(core.config().mediaLibraries[i]);
+		//if (core.config().mediaLibraries[i].active)
+			createFirstScanTask(core.config().mediaLibraries[i]);
 	}
 
 	taskManager.execTask(true);

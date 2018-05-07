@@ -164,6 +164,8 @@ function setWatchers(mediaLibrary) {
 	core.stdout(mediaLibrary,  'Setting new watchers...');
 
 	var DS = core.config().directorySeparator;
+	
+	var nbWatchers = Math.round(core.config().watchers / core.config().mediaLibraries.length);
 
 	if (mediaLibrary = core.getLibrary(mediaLibrary)) {
 
@@ -174,7 +176,7 @@ function setWatchers(mediaLibrary) {
 		Dir.lib(mediaLibrary).find(
 			{},
 			{},
-			{ limit : mediaLibrary.watchers, sort : { modificationDate : -1 } },
+			{ limit : nbWatchers, sort : { modificationDate : -1 } },
 			function (err, d) {
 				if (!err) {
 					for (var i in d) {

@@ -10,6 +10,7 @@ var taskManager = require('./taskmanager');
 //Models
 var File = require('../models/file'); // get our mongoose model
 var Dir  = require('../models/dir');
+var Libraries  = require('../models/libraries');
 
 //Chargement de la configuration
 var config = {}
@@ -18,23 +19,46 @@ function loadConfig(cb) {
 
 	fs.readFile('config.json', 'utf8', function (err, data) {
 		if (err) {
-		  console.log(err);
-		  process.exit();
+			console.log(err);
+			process.exit();
 		}
-		
-		
 
 		config = JSON.parse(data);
 
+
 		mongoose.connect(config.db); // connect to database
 
-		File.buildLibraries(config.mediaLibraries);
-		Dir.buildLibraries(config.mediaLibraries);
 
+		loadLibraries(function() {
+
+			File.buildLibraries(config.mediaLibraries);
+			Dir.buildLibraries(config.mediaLibraries);
+	
+			if (typeof(cb) == 'function')
+				cb.call(this);
+		});
+		
+	});
+}
+
+function loadLibraries(cb) {
+
+	Libraries.find({active: true}, function(err, d) {
+	
+		if (err) {
+			throw err;
+			return false;	
+		}
+		
+		config.mediaLibraries = [];
+
+		for (let l of d) {
+			config.mediaLibraries.push(l);
+		}
+		
 		if (typeof(cb) == 'function')
 			cb.call(this);
-		}
-	);
+	});
 }
 
 function getLibrary(mediaLibrary) {
@@ -65,6 +89,7 @@ function stdout(mediaLibrary, msg) {
 
 module.exports = {
 	loadConfig: loadConfig,
+	loadLibraries: loadLibraries,
     stdout: stdout,
     config: function() {return config},
 	getLibrary: getLibrary
