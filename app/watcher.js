@@ -1,7 +1,6 @@
-//Database
-//var mongo = require('mongodb');
-//var monk = require('monk');
 var fs = require('fs');
+
+var chokidar = require('chokidar');
 
 var File = require('../models/file'); // get our mongoose model
 var Dir  = require('../models/dir');
@@ -14,6 +13,9 @@ var core = require('./core');
 
 //Les watchers sont stockés dans watchers[mediaLibrary ID][]
 var watchers = [];
+
+//Stocke provisoirement les chemins pour éviter les doubles appels du même évenement
+var currentActions = [];
 
 function removeAll(mediaLibraryID) {
 
@@ -36,16 +38,16 @@ function remove(mediaLibraryID, inode) {
 	if (isWatched(mediaLibraryID, inode)) {
 		watchers[mediaLibraryID][inode].close();
 	}
-
 }
 
 function isWatched(mediaLibraryID, inode) {
 	if (typeof(watchers[mediaLibraryID][inode]) != "undefined") {
 		return true;
 	}
+	return false;
 }
 
-function createScanTask(mediaLibrary, path, eventType, filename) {
+function createScanTask(mediaLibrary, path, filename) {
 
 	var t = {
 		'type': 'scan',
@@ -60,108 +62,138 @@ function createScanTask(mediaLibrary, path, eventType, filename) {
 	var DS = core.config().directorySeparator;
 
 
-	if (eventType == 'rename') { // déplacement ou suppression
-		var fullpath = mediaLibrary.rootPath + path + DS + filename;
+	var fullpath = mediaLibrary.rootPath + path + DS + filename;
 
-		if (fs.existsSync(fullpath)) {
-			var obj = fs.statSync(fullpath);
 
-			var inode = obj.ino;
+	if (fs.existsSync(fullpath)) {
+		var obj = fs.statSync(fullpath);
 
-			if (path != '') {
-				//On recherche le dossier parent du fichier path/name
-				var lastIndex = path.lastIndexOf(DS);
-				var ppath = path.substr(0, lastIndex);
-				var pname = path.substr(lastIndex + 1);
-			}
-			else {
-				var ppath = '';
-				var pname = "__ROOT__";
-			}
+		var inode = obj.ino;
 
-			if (obj.isFile() ) {
-				//Rechercher dans collecDirs l'ID du dossier
-				Dir.lib(mediaLibrary).findOne({path: ppath, name: pname}, function(err, di) {
-					if (!err) {
-						var parentId = di._id;
-						File.lib(mediaLibrary).findOneAndUpdate({inode: inode}, {$set: {path: parentId}}, function(err, f) {
-							if (!err) {
-								if (f != null) //Le contraire peut arriver si l'élément arrive ici depuis un dossier non surveillé ou non répertorié
-									core.stdout(mediaLibrary.id, 'Moved '+filename+' to '+ di.path + DS + di.name + ', Inode: '+obj.ino);
-								else {
-									Task.findOne(t, function(err, d) {
-										if (!err && d == null) {
-											taskManager.create(t);
-										}
-									});
-								}
-							}
-						});
-
-					}
-				});
-			}
-
-			if (obj.isDirectory() ) {
-				//Rechercher dans collecDirs l'ID du dossier parent
-				Dir.lib(mediaLibrary).findOne({path: ppath, name: pname}, function (err, di) {
+		if (path != '') {
+			//On recherche le dossier parent du fichier path/name
+			var lastIndex = path.lastIndexOf(DS);
+			var ppath = path.substr(0, lastIndex);
+			var pname = path.substr(lastIndex + 1);
+		}
+		else {
+			var ppath = '';
+			var pname = "__ROOT__";
+		}
+		
+		if (obj.isFile() ) {
+			//Rechercher dans collecDirs l'ID du dossier
+			Dir.lib(mediaLibrary).findOne({path: ppath, name: pname}, function(err, di) {
+				if (!err) {
 					var parentId = di._id;
+					File.lib(mediaLibrary).findOneAndUpdate({inode: inode}, {$set: {path: parentId}}, function(err, f) {
+						if (!err) {
+
+							Task.findOne(t, function(err, d) {
+								if (!err && d == null) {
+									taskManager.create(t);
+								}
+							});
+
+						}
+					});
+
+				}
+			});
+		}
+
+		if (obj.isDirectory() ) {
+			//Rechercher dans collecDirs l'ID du dossier parent
+			Dir.lib(mediaLibrary).findOne({path: ppath, name: pname}, function (err, di) {
+				if (di !== null) {
+					var parentId = di._id;
+					pname = pname == '__ROOT__' ? '' : DS+pname;
+					
 					Dir.lib(mediaLibrary).findOneAndUpdate(
 						{inode: inode},
-						{$set: {parent: parentId, name:filename, path: ppath+DS+pname}},
+						{$set: {parent: parentId, name:filename, path: ppath+pname}},
 						function (err, f) {
 							if (!err) {
-								if (f != null) //Le contraire peut arriver si l'élément arrive ici depuis un dossier non surveillé ou non répertorié
-									core.stdout(mediaLibrary.id, 'Moved directory '+filename+' to '+ppath+DS+pname + ', Inode: '+obj.ino);
-								else {
-									t.recurse = true;
-									Task.findOne(t, function(err, d) {
-										if (!err && d == null) {
-											taskManager.create(t);
-										}
-									});
-								}
+
+								addWatcher(mediaLibrary, ppath+pname+DS+filename);	
+
+								t.recurse = true;
+								Task.findOne(t, function(err, d) {
+									if (!err && d == null) {
+										taskManager.create(t);
+									}
+								});
+		
 							}
 						}
 					);
-				});
-			}
-
-		}
-		else { //Emplacement d'origine qui n'existe plus, on scanne
-			Task.findOne(t, function(err, d) {
-				if (!err && d == null) {
-					taskManager.create(t);
 				}
 			});
-
 		}
 	}
-	else { //change
-
-		Task.findOne(t, function (err, d) {
-			if (!err && d == null) {
-				taskManager.create(t);
-			}
-		});
+	else {
+		//Scanner le parent (Arrive en cas de suppression)
+		var lastIndex = path.lastIndexOf(DS);
+		var ppath = path.substr(0, lastIndex);
+		var pname = path.substr(lastIndex + 1);
+		
+		createScanTask(mediaLibrary, ppath, pname);
 	}
+
 }
 
 function addWatcher(mediaLibrary, path) {
 	if (typeof(mediaLibrary) == 'string')
 		mediaLibrary = core.getLibrary(mediaLibrary);
 
-		var obj = fs.stat(mediaLibrary.rootPath + path, function(err, stats) {
-		    if (err == null) {
-			    watchers[mediaLibrary.id][stats.ino] = fs.watch(mediaLibrary.rootPath + path,function(typeOfEvent, nameOfFile){
-					createScanTask(mediaLibrary, path, typeOfEvent, nameOfFile);
-				});
+	var obj = fs.stat(mediaLibrary.rootPath + path, function(err, stats) {
+
+		if (err == null && stats.ino ) {
+			
+			if (watchers[mediaLibrary.id][stats.ino] != undefined) {
+				watchers[mediaLibrary.id][stats.ino].close();
 			}
-		});
+			
+			try {
+				
+				watchers[mediaLibrary.id][stats.ino] = chokidar.watch(mediaLibrary.rootPath + path, 
+					{
+						ignored: /(^|[\/\\])\../,
+						//depth: 1,
+						ignoreInitial: true,
+						awaitWriteFinish: true /*{
+							stabilityThreshold: 2000,
+							pollInterval: 100
+						}*/
+					}
+				)
+				.on('all', (event, p) => {
+					
+					var now = (new Date()).getTime();
+
+					for (let c of currentActions) {
+						if ((c.path == p || (c.event == event && c.parent.indexOf( mediaLibrary.rootPath + path) !== -1)) && c.time > (now - 2100) )
+							return false;
+					}
+
+					currentActions.push({event: event, path: p, parent: mediaLibrary.rootPath + path, time: now});
+					
+					createScanTask(mediaLibrary, p.substring(mediaLibrary.rootPath.length, p.length - core.basename(p, true).length -1), core.basename(p, true) );
+					
+					clearOldActions();
+					
+				});
+
+			}
+			catch(err) {
+				core.stdout(mediaLibrary,  err);
+			}
+		}
+	});
 }
 
 function setWatchers(mediaLibrary) {
-	core.stdout(mediaLibrary,  'Setting new watchers...');
+	core.stdout(mediaLibrary, 'Setting new watchers...');
 
 	var DS = core.config().directorySeparator;
 	
@@ -188,7 +220,16 @@ function setWatchers(mediaLibrary) {
 					throw err;
 			}
 		);
+	}
+}
 
+function clearOldActions() {
+	var now = (new Date()).getTime();
+	
+	for (var i in currentActions) {
+		if (currentActions[i].time < now - 20000) {
+			currentActions.splice(i, 1);
+		}
 	}
 }
 

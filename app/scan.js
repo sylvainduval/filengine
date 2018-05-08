@@ -274,6 +274,7 @@ function Scan(params) {
 									watcher.addWatcher(parentThis.mediaLibrary, path + DS + name);
 									core.stdout(parentThis.mediaLibrary,  'Inserting directory ' + path + DS + name + ', Inode: '+obj.ino);
 									counterAdd('counterDirs', 'done');
+																		
 									callback.call(this);
 									return true;
 
@@ -323,6 +324,9 @@ function Scan(params) {
 							} 
 							
 							core.stdout(parentThis.mediaLibrary,  'Updating directory ' + path + DS + name + ', Inode: '+obj.ino);
+							
+							//watcher.addWatcher(parentThis.mediaLibrary, path + DS + name);
+							
 							counterAdd('counterDirs', 'done');
 							callback.call(this);
 							return true;

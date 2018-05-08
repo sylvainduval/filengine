@@ -71,6 +71,13 @@ function getLibrary(mediaLibrary) {
 }
 
 
+function baseName(str, keepExtension) {
+	var base = new String(str).substring(str.lastIndexOf(config.directorySeparator) + 1); 
+	if (keepExtension == false && base.lastIndexOf(".") != -1)       
+		base = base.substring(0, base.lastIndexOf("."));
+	return base;
+}
+
 //Sortie d'un message
 function stdout(mediaLibrary, msg) {
 
@@ -92,5 +99,6 @@ module.exports = {
 	loadLibraries: loadLibraries,
     stdout: stdout,
     config: function() {return config},
-	getLibrary: getLibrary
+	getLibrary: getLibrary,
+	basename: baseName
 }
