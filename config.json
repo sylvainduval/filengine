@@ -1,18 +1,11 @@
 {
-	"db": "localhost:27017/filengine",
+	"apiPort": 3000,
+	"apiSessionValidity": 3660,
+	"db": "mongodb://localhost:27017/filengine",
+	"directorySeparator": "/",
 	"verbose": true,
 	"threads": 2,
-	"mediaLibraries" : 
-	[
-		{
-			"id" : "1234",
-			"rootPath" : "/home/sylvain/data/01-Photos",
-			"fullScanDelay" : 20
-		},
-		{
-			"id" : "5678",
-			"rootPath" : "/home/sylvain/data/06-Cartes de Voeux",
-			"fullScanDelay" : 10
-		}
-	]
+	"taskDelay": 2000,
+	"watchers": 2000,
+	"secretKey": "54AfdMO624dfpMq925Tjpl5Bu"
 }

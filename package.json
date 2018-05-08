@@ -8,8 +8,18 @@
   },
   "author": "Sylvain DUVAL",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sullivan92/filengine.git"
+  },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.18.2",
+    "chokidar": "^2.0.3",
+    "express": "^4.16.3",
+    "express-fileupload": "^0.4.0",
+    "jsonwebtoken": "^8.2.1",
     "mongodb": "^3.0.6",
-    "monk": "^6.0.5"
+    "mongoose": "^5.0.17"
   }
 }
