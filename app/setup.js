@@ -11,7 +11,7 @@ var core = require('./core');
 
 
 function createFirstScanTask(mediaLibrary) {
-
+	
     Task.findOne({
         processing: false,
         complete: false,
@@ -65,33 +65,41 @@ function createFirstApiUser() {
     });
 }
 
-				
-core.loadConfig(function() {
+function init() {
 	
-	core.stdout(null,'------------------------------------------------------------');
-	core.stdout(null,'*********** STARTING FILENGINE...... Ignition! *************');
-	core.stdout(null,'------------------------------------------------------------');
+	core.loadConfig(function() {
+		
+		core.stdout(null,'------------------------------------------------------------');
+		core.stdout(null,'*********** STARTING FILENGINE...... Ignition! *************');
+		core.stdout(null,'------------------------------------------------------------');
+		
+		createFirstApiUser();
 	
-	createFirstApiUser();
-
-    //Abandon de toutes les tâches en cours
-    taskManager.cancel();
-
-    //Suppression de toutes les tâches terminées
-    taskManager.flushComplete();
-    
+	    //Abandon de toutes les tâches en cours
+	    taskManager.cancel();
 	
-	for (var i in core.config().mediaLibraries) {
-		//Il faut d'abord rechercher si il n'a pas déjà cette tâche en attente...
-		//if (core.config().mediaLibraries[i].active)
-			createFirstScanTask(core.config().mediaLibraries[i]);
-	}
+	    //Suppression de toutes les tâches terminées
+	    taskManager.flushComplete();
+	    
+		
+		for (var i in core.config().mediaLibraries) {
+			//Il faut d'abord rechercher si il n'a pas déjà cette tâche en attente...
+			//if (core.config().mediaLibraries[i].active)
+				createFirstScanTask(core.config().mediaLibraries[i]);
+		}
+		
+		if (core.config().mediaLibraries.length == 0) {
+			core.stdout(null,'No libraries found. Please add one with API');
+		}
+	
+		taskManager.execTask(true);
+	
+		routes();
+	});
 
-	taskManager.execTask(true);
+}
 
-	routes();
-});
-
-
-
-module.exports = {}
+module.exports = {
+	createFirstScanTask: createFirstScanTask,
+	init: init
+}

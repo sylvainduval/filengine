@@ -50,7 +50,7 @@ function Scan(params) {
 	}
 
 	//Si le dossier racine n'existe pas, on le créé
-	Dir.lib(this.mediaLibrary).findOne({path: '', name: '__ROOT__'}, function(err, d) {
+	Dir.lib(parentThis.mediaLibrary).findOne({path: '', name: '__ROOT__'}, function(err, d) {
 		if (!err && d == null) {
 			var obj = fs.statSync(parentThis.rootPath);
 			
@@ -66,7 +66,7 @@ function Scan(params) {
 
 			r.save(function(err) {
 				if (!err) {
-					core.stdout(this.mediaLibrary,  'Inserting Root directory');
+					core.stdout(parentThis.mediaLibrary,  'Inserting Root directory');
 				}
 				else {
 					throw err;
@@ -75,7 +75,6 @@ function Scan(params) {
 			});
 		}
 	});
-
 
 	this.scanDir = function(task, path, filelist) {
 

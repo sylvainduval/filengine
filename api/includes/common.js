@@ -57,9 +57,19 @@ function storeSession (token, data) {
 
 	//Nettoyage des sessions expirées
 	for (var i in sessions) {
-		if (sessions[i].expire < n)
+		if (sessions[i] && sessions[i].expire < n)
 			delete sessions[i];
 	}
+}
+
+function updateSessionData(token, data) {
+	if (sessions[token]) {
+		for (var i in data) {
+			sessions[token].data[i] = data[i]
+		}
+		return true;
+	}	
+	return false;
 }
 
 function getSession(req) {
@@ -71,11 +81,34 @@ function getSession(req) {
 		return false;
 }
 
+function getToken(req) {
+	if (req.headers['x-access-token']) 
+		return req.headers['x-access-token'];
+	else
+		return false;
+}
+
+function deleteSession(token) {
+	if (sessions[token]) {
+
+		delete sessions[token] ;
+		
+		return true;
+	}
+	return false;
+}
+
 module.exports = {
 
 	storeSession: storeSession,
 	
+	deleteSession: deleteSession,
+	
+	updateSessionData: updateSessionData,
+	
 	getSession: getSession, 
+	
+	getToken: getToken,
 
 	getLibrary: function(req) {
 

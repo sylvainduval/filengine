@@ -129,6 +129,21 @@ exports.login = function(req, res) {
 
 }
 
+exports.logout = function(req, res) {
+
+	if (req.headers['x-access-token']) {
+		
+		var token = req.headers['x-access-token'];
+		
+		if (c.deleteSession(token))
+			return c.responseError(res, '', 204);
+
+	}
+
+	return c.responseError(res, 'Not login', 400);
+
+}
+
 
 exports.getLibraries = function(req, res) {
 	const id = c.ObjectID(req.params.userId);

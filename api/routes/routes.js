@@ -13,6 +13,7 @@ var core = require('../../app/core');
 
 var file = require('../controllers/file');
 var user = require('../controllers/user');
+var library = require('../controllers/library');
 
 module.exports = function() {
 	
@@ -39,9 +40,17 @@ module.exports = function() {
 		else
 			next();
 	});
+	
+	//Action sur les librairies
+	api.route('/admin/library/:mediaLibraryId')
+		.get(library.get)
+		.put(library.save);
+		
+	api.route('/admin/library/add')	
+		.post(library.create);
 
 
-
+	//Action sur les fichiers
 	api.route('/:mediaLibraryId/file/:fileId')
 		.get(file.get);
 
@@ -51,12 +60,15 @@ module.exports = function() {
 
 	
 
-
+	//Action sur les utilisateurs
 	api.route('/register')
 		.post(user.register);
 
 	api.route('/login')
 		.post(user.login);
+		
+	api.route('/logout')
+		.post(user.logout);
 
 	api.route('/user/:userId/libraries')
 		.get(user.getLibraries);
