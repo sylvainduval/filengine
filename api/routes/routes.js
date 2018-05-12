@@ -3,9 +3,9 @@
 
 var express = require('express'),
 		api = express();
-		
-const url = require('url');  
-const querystring = require('querystring'); 
+
+const url = require('url');
+const querystring = require('querystring');
 
 var bodyParser = require('body-parser');
 
@@ -32,7 +32,7 @@ module.exports = function() {
 	api.use(fileUpload());
 
 	// parse application/x-www-form-urlencoded
-	api.use(bodyParser.urlencoded({ extended: false }))	
+	api.use(bodyParser.urlencoded({ extended: false }))
 
 	// parse application/json
 	api.use(bodyParser.json())
@@ -79,9 +79,8 @@ module.exports = function() {
 	api.route('/logout')
 		.post(user.logout);
 
-	//api.route('/user/:userId/libraries')
-	//	.get(user.getLibraries);
-		//.put(user.setLibraries);
+	api.route('/users')
+		.get(user.list)
 
 	api.route('/user/:userId')
 		.get(user.getParams)

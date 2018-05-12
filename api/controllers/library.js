@@ -229,41 +229,36 @@ exports.list = function(req, res) {
 
 	//Liste des instances visibles par l'utilisateur
 	User.findById(sess.getSession(req).id, function (err, user) {
-		if (err) 
+		if (err)
 			return c.responseError(res, err, 500);
 
 		var and = [];
-		
-		if (!sess.getSession(req).isSuperAdmin) {			
+
+		if (!sess.getSession(req).isSuperAdmin) {
 			and.push({id:{ $in: user.libraries.toBSON() } });
 		}
-		
+
 		if (params.search != null) {
 			and.push({ id: {$regex : ".*"+params.search+".*"}});
 		}
-		
+
 		if (params.includeInactive == false) {
 			and.push({ active: true});
 		}
-		
+
 		var find = {}
-		
+
 		if (and.length > 0)
 			find.$and = and;
-		
+
 
 		let schema = Library.find(find,'id active');
 
-		schema.count({}, function(err, count) { 
-
-			let query = schema.find({}).skip(params.offset).limit(params.limit);
-			
-			query.exec(function (err, r) {
-				if (err) 
-					return c.responseError(res, err, 500);
-				
-				return c.responseJSON(res, { success: true, total: count, data: r }, 200);
-			});
+		c.stdListQuery(schema, params, function(err, r) {
+			if (err)
+				return c.responseError(res, err, 500);
+			else
+				return c.responseJSON(res, r, 200);
 		});
 	});
 

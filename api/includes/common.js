@@ -29,9 +29,9 @@ module.exports = {
 		if (req.params.mediaLibraryId) {
 			mediaLibraryId = req.params.mediaLibraryId;
 		}
-		
+
 		let session = sess.getSession(req);
-		
+
 		if (session !== false) {
 			for (var i in session.libraries) {
 
@@ -50,6 +50,24 @@ module.exports = {
 		}
 		else
 			return false;
+	},
+
+	stdListQuery: function(schema, params, cb) {
+
+		params.offset = params.offset ? parseInt(params.offset) : 0;
+		params.limit = params.limit ? parseInt(params.limit) : null;
+
+		schema.count({}, function(err, count) {
+
+			let query = schema.find({}).skip(params.offset).limit(params.limit);
+
+			query.exec(function (err, r) {
+
+				if (typeof(cb) == 'function') {
+					cb.call(this, err, { success: true, total: count, data: r });
+				}
+			});
+		});
 	},
 
 	responseJSON: responseJSON,
