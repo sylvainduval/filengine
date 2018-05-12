@@ -10,6 +10,7 @@ var User   = require('../../models/user'); // get our mongoose model
 
 //utilitaires communs à tous les controlleurs
 var c = require('../includes/common');
+var sess = require('../includes/session');
 
 var core = require('../../app/core');
 
@@ -24,10 +25,10 @@ exports.register = function(req, res) {
 	var libraries = req.body.libraries ? JSON.parse(decodeURIComponent(req.body.libraries)) : null;
 
 
-	if (c.checkAuth(req, res) == true && c.getSession(req).isAdmin == true && libraries !== null && libraries.length > 0) {
+	if (sess.checkAuth(req, res) == true && sess.getSession(req).isAdmin == true && libraries !== null && libraries.length > 0) {
 
 		//Ce user doit lui-même avoir accès aux librairies qu'il veut autoriser, ou être super admin...
-		var sessLib = c.getSession(req).libraries;
+		var sessLib = sess.getSession(req).libraries;
 		
 		for (var i in libraries) { //Nouvelles librairies demandées
 			var found = false;
@@ -108,7 +109,7 @@ exports.login = function(req, res) {
 				}
 				
 
-				c.storeSession(token, {
+				sess.storeSession(token, {
 					id: user._id.toString(),
 					libraries: user.libraries,
 					login: login,
@@ -135,7 +136,7 @@ exports.logout = function(req, res) {
 		
 		var token = req.headers['x-access-token'];
 		
-		if (c.deleteSession(token))
+		if (sess.deleteSession(token))
 			return c.responseError(res, '', 204);
 
 	}
@@ -145,11 +146,11 @@ exports.logout = function(req, res) {
 }
 
 
-exports.getLibraries = function(req, res) {
+/*exports.getLibraries = function(req, res) {
 	const id = c.ObjectID(req.params.userId);
 	
 	//Seul le user lui même ou un admin peut afficher les librairies d'un user
-	if (c.getSession(req).isAdmin == false && c.getSession(req).id != id)
+	if (sess.getSession(req).isAdmin == false && sess.getSession(req).id != id)
 		return c.responseError(res, 'Forbidden', 403);
 
 
@@ -173,7 +174,7 @@ exports.getLibraries = function(req, res) {
 			
 	});
 
-}
+}*/
 
 exports.setParams = function(req, res) {
 	const id            = c.ObjectID(req.params.userId); //Gérer le droit....
@@ -184,14 +185,14 @@ exports.setParams = function(req, res) {
 	const password      = req.body.password && req.body.password != null ? bcrypt.hashSync(req.body.password, 8) : null;
 
 	//Seul le user lui-même ou un admin peut éditer un user
-	if (c.getSession(req).isAdmin == false && c.getSession(req).id != id)
+	if (sess.getSession(req).isAdmin == false && sess.getSession(req).id != id)
 		return c.responseError(res, 'Forbidden', 403);
 		
 	
 
 	var update = {}
 
-	var sessLib = c.getSession(req).libraries;
+	var sessLib = sess.getSession(req).libraries;
 	
 	if (libraries !== null && libraries.length > 0) {
 		
@@ -216,7 +217,7 @@ exports.setParams = function(req, res) {
 		
 	}
 		
-	if (isAdmin !== null && c.getSession(req).isAdmin == true) {
+	if (isAdmin !== null && sess.getSession(req).isAdmin == true) {
 		update.isAdmin = isAdmin == 1 ? true : false;
 	}
 		
@@ -224,11 +225,11 @@ exports.setParams = function(req, res) {
 		update.email = email;
 		
 	//Seul un admin peut modifier le droit isContributor
-	if (isContributor !== null && c.getSession(req).isAdmin == true)
+	if (isContributor !== null && sess.getSession(req).isAdmin == true)
 		update.isContributor = isContributor == 1 ? true : false;
 		
 	//Seul un admin ou le user lui-même peut modifier un mot de passe
-	if (password != null && (c.getSession(req).isAdmin == true || c.getSession(req).id == id)) 
+	if (password != null && (sess.getSession(req).isAdmin == true || sess.getSession(req).id == id)) 
 		update.password = password;
 	
 	if (Object.keys(update).length === 0 && update.constructor === Object)
@@ -243,8 +244,8 @@ exports.setParams = function(req, res) {
 			return c.responseError(res, 'User not found', 400);
 	  	
 	  	//Un user, même admin (mais pas super admin) ne peut modifier un autre user que s'ils partagent les mêmes librairies
-		//toutes les librairies du modifié (u.libraries) doivent donc être déjà accessibles au modifieur (être dans c.getSession(req).libraries)
-		if (c.getSession(req).isSuperAdmin == false && user.libraries) {
+		//toutes les librairies du modifié (u.libraries) doivent donc être déjà accessibles au modifieur (être dans sess.getSession(req).libraries)
+		if (sess.getSession(req).isSuperAdmin == false && user.libraries) {
 			var found = 0;
 			for (var j in user.libraries) {
 				for (var i in sessLib) {
@@ -290,7 +291,7 @@ exports.getParams = function(req, res) {
 exports.delete = function(req, res) {
 	const id = c.ObjectID(req.params.userId);
 	
-	if (c.getSession(req).isAdmin == false) {
+	if (sess.getSession(req).isAdmin == false) {
 		return c.responseError(res, 'Forbidden: only admin can delete user', 403);
 	}
 	
@@ -308,10 +309,10 @@ exports.delete = function(req, res) {
 			return c.responseError(res, 'Forbidden', 403);
 			
 		//Un user, même admin (mais pas super admin) ne peut modifier un autre user que s'ils partagent les mêmes librairies
-		//toutes les librairies du modifié (u.libraries) doivent donc être déjà accessibles au modifieur (être dans c.getSession(req).libraries)
-		if (c.getSession(req).isSuperAdmin == false && user.libraries) {
+		//toutes les librairies du modifié (u.libraries) doivent donc être déjà accessibles au modifieur (être dans sess.getSession(req).libraries)
+		if (sess.getSession(req).isSuperAdmin == false && user.libraries) {
 			
-			var sessLib = c.getSession(req).libraries;
+			var sessLib = sess.getSession(req).libraries;
 			var found = 0;
 			
 			for (var j in user.libraries) {
