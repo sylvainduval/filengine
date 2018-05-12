@@ -7,11 +7,14 @@ var taskManager = require('./taskmanager');
 //Routes
 var routes = require('../api/routes/routes');
 
+//Sessions
+var sess = require('../api/includes/session');
+
 var core = require('./core');
 
 
 function createFirstScanTask(mediaLibrary) {
-	
+
     Task.findOne({
         processing: false,
         complete: false,
@@ -66,35 +69,39 @@ function createFirstApiUser() {
 }
 
 function init() {
-	
+
 	core.loadConfig(function() {
-		
+
 		core.stdout(null,'------------------------------------------------------------');
 		core.stdout(null,'*********** STARTING FILENGINE...... Ignition! *************');
 		core.stdout(null,'------------------------------------------------------------');
-		
+
 		createFirstApiUser();
-	
+
 	    //Abandon de toutes les tâches en cours
 	    taskManager.cancel();
-	
+	//Routes
+var routes = require('../api/routes/routes');
 	    //Suppression de toutes les tâches terminées
 	    taskManager.flushComplete();
-	    
-		
+
+
 		for (var i in core.config().mediaLibraries) {
 			//Il faut d'abord rechercher si il n'a pas déjà cette tâche en attente...
 			//if (core.config().mediaLibraries[i].active)
 				createFirstScanTask(core.config().mediaLibraries[i]);
 		}
-		
+
 		if (core.config().mediaLibraries.length == 0) {
 			core.stdout(null,'No libraries found. Please add one with API');
 		}
-	
+
 		taskManager.execTask(true);
-	
+
 		routes();
+
+		//Restauration des précédentes sessions
+		sess.restoreSessionDB();
 	});
 
 }
