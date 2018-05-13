@@ -100,7 +100,6 @@ exports.save = function(req, res) { //Mise à jour
 
 			Library.findOneAndUpdate({ id: id},{ $set: update }, {new: true}, function (err, data) {
 				if (err) {
-					console.log(err);
 					return c.responseError(res, err, 500);
 				}
 

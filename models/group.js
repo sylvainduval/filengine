@@ -11,12 +11,7 @@ var sch = new Schema({
         type : Schema.Types.ObjectId,
         ref: 'Libraries',
         required : true
-    },
-    entryPoints: [
-        new Schema({
-            dir: Schema.Types.ObjectId
-        })
-    ]
+    }
 
 });
 
