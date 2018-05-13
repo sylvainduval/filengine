@@ -20,6 +20,7 @@ var core = require('../../app/core');
 var file = require('../controllers/file');
 var user = require('../controllers/user');
 var library = require('../controllers/library');
+var group = require('../controllers/group');
 
 module.exports = function() {
 
@@ -58,6 +59,16 @@ module.exports = function() {
 	api.route('/libraries')
 		.get(library.list);
 
+	//Action sur les groupes d'accès
+	api.route('/admin/group/:groupId')
+		.get(group.get)
+		.put(group.save);
+
+	api.route('/admin/group/add')
+		.post(group.create);
+
+	api.route('/groups')
+		.get(group.list);
 
 	//Action sur les fichiers
 	api.route('/:mediaLibraryId/file/:fileId')
