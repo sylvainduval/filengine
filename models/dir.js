@@ -29,14 +29,10 @@ function buildLibraries(libs) {
 					type : Schema.Types.ObjectId,
 					ref: 'lib_'+ libs[i].id + '_dirs'
 				},
-				entryPoint: [
-					{
-						group: {
-							type : Schema.Types.ObjectId,
-							ref: 'groups'
-						}
-					}
-				]
+				entryPoint: [{
+					type : Schema.Types.ObjectId,
+					ref: 'groups'
+				}]
 			})
 
 		);

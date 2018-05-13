@@ -63,7 +63,7 @@ function loadLibraries(cb) {
 
 function getLibrary(mediaLibrary) {
 	for (var i in config.mediaLibraries) {
-		if (config.mediaLibraries[i].id == mediaLibrary) {
+		if (config.mediaLibraries[i].id == mediaLibrary || config.mediaLibraries[i]._id.toString() == mediaLibrary) {
 			return config.mediaLibraries[i];
 		}
 	}

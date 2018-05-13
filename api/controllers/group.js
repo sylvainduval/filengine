@@ -29,12 +29,16 @@ exports.get = function(req, res) {
             return c.responseError(res, err, 500);
         }
 
+        if (data == null) {
+            return c.responseError(res, 'ID not found', 400);
+        }
+
         //Récupération des entrées dans la collection des dirs
         Dir.lib(data.library.id).find({
-            'entryPoint.group': { 
-                $in: groupId 
+            'entryPoint': { 
+                $in: [groupId]
             } 
-        }, function(err, g) {
+        }, 'path name', function(err, g) {
             if (err) {
                 return c.responseError(res, err, 500);
             }
@@ -71,58 +75,65 @@ exports.save = function(req, res) {
         { new: true }, 
         function (err, data) {
             if (err) {
-                console.log(err);
                 return c.responseError(res, err, 500);
             }
 
+            var lib = core.getLibrary(data.library);
+
+
             if (dirs != null) {
-                console.log(dirs);
+
+
+                //Ajouter aux dirs indiqués l'entrypoint du groupId
+                for (let d of dirs) {
+                    Dir.lib(lib.id).findById(d, function(err, di) {
+
+                        var found = false;
+                        for (let ep of di.entryPoint) {
+                            if (ep.toString() == groupId)
+                                found = true;
+                        }
+                        if (found == false) {
+                            di.entryPoint.push(groupId);
+                            di.save(function(err) {
+                                if (err) {
+                                    return c.responseError(res, err, 500);
+                                }
+                            });
+                        }
+                    });
+                }
+
                 //Retirer de tous les dirs les entrypoints du groupId 
                 //qui ne sont pas dans dirs
-                /*Dir.lib(data.library.id).find({
-                    'entryPoint.group': { 
-                        $in: groupId 
+                Dir.lib(lib.id).find({
+                    'entryPoint': { 
+                        $in: [groupId]
                     } 
                 }, function(err, d) {
                     if (err) {
                         return c.responseError(res, err, 500);
                     }
+
                     //Pour tous les d trouvés, si l'_id n'est pas dans dirs, 
                     //enlever le groupId de ses entryPoint
-                    /*for (let result of d) {
-                        if (dirs.indexOf(result._id) == -1) {
-                            result.entryPoint.group(groupId).remove();
+                    for (let result of d) {
 
+                        if (dirs.length == 0 || dirs.indexOf(result._id.toString()) == -1) {
+                           
+                            result.entryPoint.splice(groupId, 1);
 
-                            result.save();
+                            result.save(function(err) {
+                                if (err) {
+                                    return c.responseError(res, err, 500);
+                                }
+                            });
                         }
                     }
-                    ?????????????????????????????????
-                    */
-                    
-
-
-                    //Ajouter aux dirs indiqués l'entrypoint du groupId
-
-
-
-
-
-
-
-
-
-                    return c.responseJSON(res, { success: true, data: data }, 200);
-                //});
-
-
-                
-
-
-
+                });
             }
-            else
-                return c.responseJSON(res, { success: true, data: data }, 200);
+
+            return c.responseJSON(res, { success: true, data: data }, 200);
         }
     );
 
