@@ -33,29 +33,29 @@ function loadConfig(cb) {
 
 			File.buildLibraries(config.mediaLibraries);
 			Dir.buildLibraries(config.mediaLibraries);
-	
+
 			if (typeof(cb) == 'function')
 				cb.call(this);
 		});
-		
+
 	});
 }
 
 function loadLibraries(cb) {
 
 	Libraries.find({active: true}, function(err, d) {
-	
+
 		if (err) {
 			throw err;
-			return false;	
+			return false;
 		}
-		
+
 		config.mediaLibraries = [];
 
 		for (let l of d) {
 			config.mediaLibraries.push(l);
 		}
-		
+
 		if (typeof(cb) == 'function')
 			cb.call(this);
 	});
@@ -72,8 +72,8 @@ function getLibrary(mediaLibrary) {
 
 
 function baseName(str, keepExtension) {
-	var base = new String(str).substring(str.lastIndexOf(config.directorySeparator) + 1); 
-	if (keepExtension == false && base.lastIndexOf(".") != -1)       
+	var base = new String(str).substring(str.lastIndexOf(config.directorySeparator) + 1);
+	if (keepExtension == false && base.lastIndexOf(".") != -1)
 		base = base.substring(0, base.lastIndexOf("."));
 	return base;
 }
