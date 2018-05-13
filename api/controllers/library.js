@@ -10,6 +10,7 @@ var User = require('../../models/user');
 var Task = require('../../models/task');
 var File = require('../../models/file');
 var Dir = require('../../models/dir');
+var Group = require('../../models/group');
 
 //Gestionnaire de taches
 var taskManager = require('../../app/taskmanager');
@@ -23,23 +24,43 @@ var core = require('../../app/core');
 
 
 exports.get = function(req, res) {
-	var mediaLib = c.getLibrary(req);
+	var mediaLib = c.getLibrary(req).toObject();
 
 	if (sess.getSession(req).libraries) {
 		//Libraries autorisées pour l'utilisateur
+		var found = false;
 		for (let j of sess.getSession(req).libraries) {
 
 			if (mediaLib.id == j) {
+				found = true;
 
-				if (!sess.getSession(req).isAdmin)
+				if (!sess.getSession(req).isAdmin) {
 					mediaLib.rootPath = undefined; // Inutile de divulguer ça à des non admin...
+					return c.responseJSON(res, {success: true, data: mediaLib}, 200);
+				}
+				else {
+					Group.find({library: mediaLib._id}, 'name entryPoints', function(err, g) {
+						if (err) {
+							return c.responseError(res, err, 500);
+						}
 
-				return c.responseJSON(res, {success: true, data: mediaLib}, 200);
+						mediaLib.groups = g;
+
+						return c.responseJSON(res, {success: true, data: mediaLib}, 200);
+					});
+				}
+
+				break;
 			}
 		}
+		if (found == false)
+			return c.responseError(res, 'invalid ID', 400);
+	}
+	else {
+		return c.responseError(res, 'invalid ID', 400);
 	}
 
-	return c.responseError(res, 'invalid ID', 400);
+
 }
 
 exports.save = function(req, res) { //Mise à jour
@@ -79,7 +100,6 @@ exports.save = function(req, res) { //Mise à jour
 
 			Library.findOneAndUpdate({ id: id},{ $set: update }, {new: true}, function (err, data) {
 				if (err) {
-					console.log(err);
 					return c.responseError(res, err, 500);
 				}
 
@@ -110,7 +130,6 @@ exports.save = function(req, res) { //Mise à jour
 
 		Library.findOneAndUpdate({ id: id},{ $set: update }, {new: true}, function (err, data) {
 			if (err) {
-				console.log(err);
 				return c.responseError(res, err, 500);
 			}
 
@@ -149,7 +168,6 @@ exports.create = function(req, res) { //Création
 
 	Library.findOne({ id: insert.id}, function (err, data) {
 		if (err) {
-			console.log(err);
 			return c.responseError(res, err, 500);
 		}
 
