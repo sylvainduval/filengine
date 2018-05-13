@@ -10,7 +10,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sullivan92/filengine.git"
+    "url": "https://github.com/sylvainduval/filengine.git"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

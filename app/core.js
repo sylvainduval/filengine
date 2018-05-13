@@ -10,7 +10,7 @@ var taskManager = require('./taskmanager');
 //Models
 var File = require('../models/file'); // get our mongoose model
 var Dir  = require('../models/dir');
-var Libraries  = require('../models/libraries');
+var Libraries  = require('../models/library');
 
 //Chargement de la configuration
 var config = {}

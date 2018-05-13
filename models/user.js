@@ -7,6 +7,7 @@ var sch = new Schema({
     email: String,
     password: String, 
     isAdmin: Boolean,
+    isContributor: Boolean,
     isSuperAdmin: Boolean,
     deleted: { type : Boolean, required : true },
     libraries: [String]

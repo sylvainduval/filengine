@@ -7,5 +7,6 @@
 	"threads": 2,
 	"taskDelay": 2000,
 	"watchers": 2000,
-	"secretKey": "54AfdMO624dfpMq925Tjpl5Bu"
+	"secretKey": "54AfdMO624dfpMq925Tjpl5Bu",
+	"pathForNewLibraries": "/home/sylvain/data"
 }

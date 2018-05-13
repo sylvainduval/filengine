@@ -1,33 +1,7 @@
-
-//Authentification
-var jwt = require('jsonwebtoken');
-//var bcrypt = require('bcryptjs');
-
 var core = require('../../app/core');
 
+var sess = require('../includes/session');
 
-//Données des sessions courantes. Ex : librairies autorisées.
-var sessions = [];
-
-function extendSession(token) {
-	var n = Math.round(Date.now() / 1000);
-	if (sessions[token]) {
-		sessions[token].expire = n + core.config().apiSessionValidity;
-		return true;
-	}
-	else
-		return false;
-}
-
-function checkSessionValidity(token) {
-	var n = Math.round(Date.now() / 1000);
-
-	if (sessions[token] && sessions[token].expire > n) {
-		return true;
-	}
-	else
-		return false;
-}
 
 function responseJSON(res, obj, status) {
 		res.status(status);
@@ -46,36 +20,7 @@ function responseError(res, err, status) {
 	return res;
 }
 
-function storeSession (token, data) {
-	var n = Math.round(Date.now() / 1000);
-
-	sessions[token] = {
-		expire: (n + core.config().apiSessionValidity),
-		data: data //libraries, login...
-	}
-
-
-	//Nettoyage des sessions expirées
-	for (var i in sessions) {
-		if (sessions[i].expire < n)
-			delete sessions[i];
-	}
-}
-
-function getSession(req) {
-	var token = req.headers['x-access-token'];
-	
-	if (sessions[token]) 
-		return sessions[token].data;
-	else
-		return false;
-}
-
 module.exports = {
-
-	storeSession: storeSession,
-	
-	getSession: getSession, 
 
 	getLibrary: function(req) {
 
@@ -85,16 +30,15 @@ module.exports = {
 			mediaLibraryId = req.params.mediaLibraryId;
 		}
 
-			var token = req.headers['x-access-token'];
+		let session = sess.getSession(req);
 
-			if (sessions[token]) {
-				for (var i in sessions[token].data.libraries) {
+		if (session !== false) {
+			for (var i in session.libraries) {
 
-					if (sessions[token].data.libraries[i] == mediaLibraryId)
-						return core.getLibrary(mediaLibraryId);
-				}
+				if (session.libraries[i] == mediaLibraryId)
+					return core.getLibrary(mediaLibraryId);
 			}
-
+		}
 
 		return false;
 	},
@@ -108,31 +52,22 @@ module.exports = {
 			return false;
 	},
 
-	checkAuth: function(req, res) {
-		var token = req.headers['x-access-token'];
-		if (!token)
-			return false; //res.status(401).send({ auth: false, message: 'No token provided.' });
+	stdListQuery: function(schema, params, cb) {
 
-		return jwt.verify(token, core.config().secretKey, function(err, decoded) {
-		    if (err)
-		    	return false;/*res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+		params.offset = params.offset ? parseInt(params.offset) : 0;
+		params.limit = params.limit ? parseInt(params.limit) : null;
 
-		    res.status(200).send(decoded);*/
-		    else {
-			    if (checkSessionValidity(token)) {
+		schema.count({}, function(err, count) {
 
-				    //Il faut rafraichir le token prolongé...
-				    extendSession(token);
-			    	return true;
-		    	}
-		    	else {
-			    	//Session expired
-			    	return false;
-			    }
+			let query = schema.find({}).skip(params.offset).limit(params.limit);
 
-		    }
+			query.exec(function (err, r) {
+
+				if (typeof(cb) == 'function') {
+					cb.call(this, err, { success: true, total: count, data: r });
+				}
+			});
 		});
-
 	},
 
 	responseJSON: responseJSON,

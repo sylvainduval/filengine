@@ -1,2 +1,3 @@
-require('./app/setup');
+let setup = require('./app/setup');
 
+setup.init();
