@@ -39,7 +39,7 @@ Edit config.js and put your own settings:
 | apiPort | Rest API listenning port |
 | apiSessionValidity | in seconds, connexion will expire after inactivity |
 | db | MongoDB connexion path | 
-| directorySeparator | Depends on your system, like '/' or '\' | 
+| directorySeparator | Depends on your system, like '/' or '\\' | 
 | verbose | displays messages on console (true), or not (false) | 
 | threads |  number of simultanous asynchronous tasks | 
 | taskDelay | delay before watching for new task when none found |
