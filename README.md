@@ -13,7 +13,8 @@ Mongo and NodeJS must be installed.
 Download or clone project on your local machine.
 Just run :
 
-```npm install
+```
+npm install
 ```
 
 Edit config.js and put your own settings:
@@ -42,22 +43,44 @@ Edit config.js and put your own settings:
 | verbose | displays messages on console (true), or not (false) | 
 | threads |  number of simultanous asynchronous tasks | 
 | taskDelay | delay before watching for new task when none found |
-| watchers | number of filesystem event watchers allowed for the app | 
+| watchers | number of filesystem event watchers allowed for the app. Most recent directories will be watched | 
 | secretKey | passphrase for encrypting users password in database | 
 | pathForNewLibraries | New libraries will be created here | 
 
 Then launch the app:
 
-```node app.js
+```
+node app.js
 ```
 
-## Running the tests
+## First login
 
-Explain how to run the automated tests for this system
+Login with build-in first user api :
 
-### Break down into end to end tests
+[POST] http://1.2.3.4:3000/login
+x-www-form-urlencoded parameters :
+Login: api
+Password : api
 
-Explain what these tests test and why
+JWT Token will return. You'll need to put this token in the header of next request :
+
+### First library
+
+A library is the first level of stored data. A user can access to one or many libraries.
+[POST] http://1.2.3.4:3000/admin/library/add
+
+Headers : 
+| Parameter | Value |
+| --- | --- |
+| Content-Type | application/x-www-form-urlencoded |
+| x-access-token | Your Session token |
+
+Body :
+| Parameter | Value |
+| --- | --- |
+| fullScanDelay | in minutes, delay between two full database and filesystem synchronisation |
+| id | Main name of the library (brand, customer ID...). The main key in URL API calls |
+| active | (true) to activate library usage and synchronisation |
 
 ```
 Give an example
