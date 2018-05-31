@@ -23,10 +23,10 @@ var sch = new Schema({
     groups: [
         {
             type : Schema.Types.ObjectId,
-            ref: 'Groups'
+            ref: 'Group'
         }
     ]
-}, { collection: 'users' });
+}, {collection: 'users'});
 
 // set up a mongoose model and pass it using module.exports
 module.exports = mongoose.model('User', sch);
