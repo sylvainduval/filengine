@@ -24,7 +24,9 @@ exports.get = function(req, res) {
 
 	if (mediaLib && id) {
 
-		File.lib(mediaLib).findById(id, function (err, d) {
+		File.lib(mediaLib).findById(id)
+		.populate({ path: 'path'})
+	    .exec(function (err, d) {
 
 			if (err)
 				return c.responseError(res, err, 500);
@@ -55,7 +57,7 @@ exports.upload = function(req, res) {
 
 		if (err)
 			return c.responseError(res, err, 500);
-			
+
 		if (d == null)
 			return c.responseError(res, 'Parent ID not found', 400);
 
@@ -71,9 +73,9 @@ exports.upload = function(req, res) {
 
 		    //On retourne la tâche du rescan du dossier
 		    if (watcher.isWatched(mediaLib.id, d.inode)) {
-			    
+
 				taskManager.get(mediaLib, 'scan', d.path + DS + d.name, function(task, err) {
-					
+
 					console.log('watched');
 					if (err)
 						return c.responseError(res, err, 500);

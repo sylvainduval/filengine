@@ -20,6 +20,11 @@ function responseError(res, err, status) {
 	return res;
 }
 
+function responseInt(cb, err, data, code) {
+	cb.call(this, err, data, code);
+	return false;
+}
+
 module.exports = {
 
 	getLibrary: function(req) {
@@ -71,6 +76,7 @@ module.exports = {
 	},
 
 	responseJSON: responseJSON,
-	responseError: responseError
+	responseError: responseError,
+	responseInt: responseInt
 
 }
