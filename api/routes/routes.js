@@ -11,6 +11,8 @@ var bodyParser = require('body-parser');
 
 const fileUpload = require('express-fileupload');
 
+const cors = require('cors');
+
 //Common
 var c = require('../includes/common');
 var sess = require('../includes/session');
@@ -37,11 +39,16 @@ module.exports = function() {
 
 	// parse application/json
 	api.use(bodyParser.json())
+	
+	api.use(cors({
+	  origin: '*'
+	}));
 
 	api.use(function (req, res, next) {
 		
 		res.header("Access-Control-Allow-Origin", "*");
 		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+		//res.header('Access-Control-Allow-Methods', 'HEAD, GET, POST, OPTIONS, PUT, PATCH, DELETE');
 
 		if ( req.originalUrl != '/login' && req.originalUrl !='/register' && sess.checkAuth(req, res) == false) {
 
