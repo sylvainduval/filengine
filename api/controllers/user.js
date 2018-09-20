@@ -357,7 +357,7 @@ module.exports = {
 			//Exécution de la mise à jour
 			User.findOneAndUpdate(
 				{ _id: id},
-				{ $set: {password: false, email: false, deleted: true} },
+				{ $set: {password: null, email: null, deleted: true} },
 				function (err, user) {
 
 					if (err)
