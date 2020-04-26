@@ -205,7 +205,7 @@ function end(obj) {
 }
 
 function flushComplete() {
-	Task.remove({complete: true, error: null}, function(err) {
+	Task.deleteMany({complete: true, error: null}, function(err) {
 		if (!err)
 			core.stdout(null, 'Flushing complete tasks');
 	});
@@ -219,7 +219,7 @@ function cancel() {
 			core.stdout(null, 'Aborting '+d.length+' tasks');
 
 			for (var t in d) {
-				Task.findOneAndUpdate({_id: d[t]._id}, {$set: {complete: true, processing: false, error: 'Aborted'}}, function(err) {});	
+				Task.findOneAndUpdate({_id: d[t]._id}, {$set: {complete: true, processing: false, error: 'Aborted'}}, function(err) {});
 			}
 		}
 	});
