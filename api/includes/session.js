@@ -121,7 +121,7 @@ function deleteSessionDB(token, cb) {
 function clearSessionDB() {
 	var n = Math.round(Date.now() / 1000);
 
-	Session.remove({expire: { $lt : n}}, function (err){
+	Session.deleteMany({expire: { $lt : n}}, function (err){
 		if(err) { core.stdout(null,err) }
 	});
 }

@@ -26,7 +26,11 @@ function loadConfig(cb) {
 		config = JSON.parse(data);
 
 
-		mongoose.connect(config.db); // connect to database
+		mongoose.connect(config.db, {
+			useNewUrlParser: true,
+			useUnifiedTopology: true,
+			useFindAndModify: false
+		}); // connect to database
 
 
 		loadLibraries(function() {
