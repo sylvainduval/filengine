@@ -1,10 +1,10 @@
-**Get libraries list**
+**Get groups list**
 ----
-  Returns json data of a libraries list.
+  Returns json data of a groups list.
 
 * **URL**
 
-  /libraries
+  /groups
 
 * **Method:**
 
@@ -23,7 +23,7 @@
    `search=[string]` Search expression<br />
    `offset=[integer]` Return results after<br />
    `limit=[integer]` Maximum results number<br />
-   `inactive=[bool]` If true, inactive libraries will be returned too<br />
+   `library=[string]` Return only groups related to this library ID or identifier<br />
 
 * **Success Response:**
 
