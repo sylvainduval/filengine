@@ -172,7 +172,14 @@ module.exports = {
 						isContributor: user.isContributor ? user.isContributor : false
 					});
 
-					return c.responseJSON(res, { success: true, token: token }, 200);
+					return c.responseJSON(res, { success: true, data: {
+						_id: user._id.toString(),
+						token: token,
+						login: login,
+						isAdmin: user.isAdmin ? user.isAdmin : false,
+						isSuperAdmin: user.isSuperAdmin ? user.isSuperAdmin : false,
+						isContributor: user.isContributor ? user.isContributor : false
+					} }, 200);
 				}
 				else
 					return c.responseError(res, 'Authentication failed. Wrong password.', 401);
@@ -350,7 +357,7 @@ module.exports = {
 			//Exécution de la mise à jour
 			User.findOneAndUpdate(
 				{ _id: id},
-				{ $set: {password: false, email: false, deleted: true} },
+				{ $set: {password: null, email: null, deleted: true} },
 				function (err, user) {
 
 					if (err)

@@ -137,7 +137,7 @@ exports.save = function(req, res) { //Mise à jour
 				return c.responseError(res, 'Not found', 400);
 
 			if (data.active == false) {
-				Task.remove({mediaLibrary : id, "processing" : false, "complete" : false}, function (err, data) {});
+				Task.deleteMany({mediaLibrary : id, "processing" : false, "complete" : false}, function (err, data) {});
 			}
 
 			//Recharger la conf...

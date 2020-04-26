@@ -1,5 +1,5 @@
+require('dotenv').config();
 var mongoose = require('mongoose');
-
 
 //Filesystem
 var fs = require('fs');
@@ -16,17 +16,24 @@ var Libraries  = require('../models/library');
 var config = {}
 
 function loadConfig(cb) {
+	config = {
+		apiPort: process.env.API_PORT,
+		apiSessionValidity: process.env.API_SESSION_VALIDITY,
+		db: process.env.DB,
+		directorySeparator: process.env.DIRECTORY_SEPARATOR,
+		verbose: process.env.VERBOSE,
+		threads: process.env.THREADS,
+		taskDelay: process.env.TASK_DELAY,
+		watchers: process.env.WATCHERS,
+		secretKey: process.env.SECRET_KEY,
+		pathForNewLibraries: process.env.PATH_FOR_NEW_LIBRARIES
+	}
 
-	fs.readFile('config.json', 'utf8', function (err, data) {
-		if (err) {
-			console.log(err);
-			process.exit();
-		}
-
-		config = JSON.parse(data);
-
-
-		mongoose.connect(config.db); // connect to database
+		mongoose.connect(config.db, {
+			useNewUrlParser: true,
+			useUnifiedTopology: true,
+			useFindAndModify: false
+		}); // connect to database
 
 
 		loadLibraries(function() {
@@ -37,8 +44,6 @@ function loadConfig(cb) {
 			if (typeof(cb) == 'function')
 				cb.call(this);
 		});
-
-	});
 }
 
 function loadLibraries(cb) {
