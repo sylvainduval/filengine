@@ -16,7 +16,7 @@
 
    `x-access-token=[string]`
 
-*  **URL Params**
+*  **Route Params**
 
    **Required:**
 

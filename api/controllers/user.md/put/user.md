@@ -17,7 +17,7 @@
    `Content-Type=application/x-www-form-urlencoded`<br />
    `x-access-token=[string]`
 
-*  **URL Params**
+*  **Route Params**
 
    **Required:**
 
