@@ -28,12 +28,12 @@ function loadConfig(cb) {
 		secretKey: process.env.SECRET_KEY,
 		pathForNewLibraries: process.env.PATH_FOR_NEW_LIBRARIES
 	}
-
-		mongoose.connect(config.db, {
-			useNewUrlParser: true,
-			useUnifiedTopology: true,
-			useFindAndModify: false
-		}); // connect to database
+	mongoose.connect(config.db, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		useFindAndModify: false,
+		useCreateIndex: true
+	}); // connect to database
 
 
 		loadLibraries(function() {
