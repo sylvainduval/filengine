@@ -5,18 +5,19 @@ var mongoose = require('mongoose');
 var fs = require('fs');
 
 //Gestionnaire de taches
-var taskManager = require('./taskmanager');
+var taskManager = require('app/taskmanager');
 
 //Models
-var File = require('../models/file'); // get our mongoose model
-var Dir  = require('../models/dir');
-var Libraries  = require('../models/library');
+var File = require('models/file'); // get our mongoose model
+var Dir  = require('models/dir');
+var Libraries  = require('models/library');
 
 //Chargement de la configuration
 var config = {}
 
 function loadConfig(cb) {
 	config = {
+		devMode: process.env.DEV_MODE,
 		apiPort: process.env.API_PORT,
 		apiSessionValidity: process.env.API_SESSION_VALIDITY,
 		db: process.env.DB,
@@ -28,12 +29,12 @@ function loadConfig(cb) {
 		secretKey: process.env.SECRET_KEY,
 		pathForNewLibraries: process.env.PATH_FOR_NEW_LIBRARIES
 	}
-
-		mongoose.connect(config.db, {
-			useNewUrlParser: true,
-			useUnifiedTopology: true,
-			useFindAndModify: false
-		}); // connect to database
+	mongoose.connect(config.db, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		useFindAndModify: false,
+		useCreateIndex: true
+	}); // connect to database
 
 
 		loadLibraries(function() {

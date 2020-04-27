@@ -13,6 +13,7 @@
     "url": "https://github.com/sylvainduval/filengine.git"
   },
   "dependencies": {
+    "app-module-path": "^2.2.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "chokidar": "^3.3.1",

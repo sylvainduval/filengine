@@ -2,20 +2,20 @@
 //Filesystem
 var fs = require('fs');
 
-var watcher = require('../../app/watcher.js');
+var watcher = require('app/watcher.js');
 
 //Models
-var File = require('../../models/file'); // get our mongoose model
-var Dir = require('../../models/dir');
+var File = require('models/file'); // get our mongoose model
+var Dir = require('models/dir');
 
 //Gestionnaire de taches
-var taskManager = require('../../app/taskmanager');
+var taskManager = require('app/taskmanager');
 
 
 //utilitaires communs à tous les controlleurs
-var c = require('../includes/common');
+var c = require('api/includes/common');
 
-var core = require('../../app/core');
+var core = require('app/core');
 
 
 exports.get = function(req, res) {

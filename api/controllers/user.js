@@ -6,19 +6,16 @@ var jwt = require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
 
 //Models
-var User   = require('../../models/user'); // get our mongoose model
-var Group = require('../../models/group');
+var User = require('models/user'); // get our mongoose model
+var Group = require('models/group');
 
 //utilitaires communs à tous les controlleurs
-var c = require('../includes/common');
-var sess = require('../includes/session');
-
-var core = require('../../app/core');
-
-
+var c = require('api/includes/common');
+var sess = require('api/includes/session');
+var core = require('app/core');
 
 function getUser(userId, cb) {
-	
+
 	User.findById(userId)
 	.populate('groups')
 	.exec(function (err, user) {
@@ -31,10 +28,10 @@ function getUser(userId, cb) {
         }
 
 		user.password = undefined;
-		
+
 		user = user.toObject();
-		
-		
+
+
 		if (user.isSuperAdmin) {
 			user.isContributor = true;
 			user.libraries = [];
@@ -65,12 +62,12 @@ function getUser(userId, cb) {
 }
 
 module.exports = {
-	
+
 	//Méthodes internes
 	getUser: getUser,
-	
-	//Méthodes de l'API	
-	
+
+	//Méthodes de l'API
+
 	// CREATES A NEW USER
 	register: function(req, res) {
 		var login     = req.body.login     ? req.body.login : false;
@@ -136,21 +133,21 @@ module.exports = {
 			return c.responseError(res, 'invalid parameters');
 		}
 
-
 		// find each person with a last name matching 'Ghost', selecting the `name` and `occupation` fields
-		User.findOne({ 'login': login, deleted: false }, /*'password',*/ function (err, user) {
+		User.findOne({ 'login': login, deleted: false }, function (err, user) {
 		  if (err)
 			return c.responseError(res, err, 500);
 
-		  if (user == null)
-			return c.responseError(res, 'Authentication failed. User not found.', 500);
+			if (user == null) {
+				return c.responseError(res, 'Authentication failed.', 401);
+			}
 
 		  bcrypt.compare(password, user.password, function(err, isMatch) {
 
 				if (isMatch == true) {
 
 					var token = jwt.sign({ id: user._id }, core.config().secretKey);
-					
+
 					//Les super Admin ont droit à toutes les librairies
 					if (user.isSuperAdmin) {
 						user.isContributor = true;
@@ -182,7 +179,7 @@ module.exports = {
 					} }, 200);
 				}
 				else
-					return c.responseError(res, 'Authentication failed. Wrong password.', 401);
+					return c.responseError(res, 'Authentication failed.', 401);
 			});
 
 
@@ -310,7 +307,7 @@ module.exports = {
 		getUser(id, function(err, data, code) {
 		    if (code >= 400) {
 			    return c.responseError(res, err, code);
-			} 
+			}
 			else {
 				return c.responseJSON(res, data, code);
 			}
