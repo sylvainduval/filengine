@@ -17,35 +17,20 @@ Just run :
 npm install
 ```
 
-Edit config.js and put your own settings:
-
-```
-{
-	"apiPort": 3000,
-	"apiSessionValidity": 3660,
-	"db": "mongodb://localhost:27017/filengine",
-	"directorySeparator": "/",
-	"verbose": true,
-	"threads": 2,
-	"taskDelay": 2000,
-	"watchers": 2000,
-	"secretKey": "54AfdMO624dfpMq925Tjpl5Bu",
-	"pathForNewLibraries": "/home/me/data"
-}
-```
+Copy .env.sample to .env file at root level and edit it with your own settings:
 
 | Parameter | Description |
 | --- | --- |
-| apiPort | Rest API listenning port |
-| apiSessionValidity | in seconds, connexion will expire after inactivity |
-| db | MongoDB connexion path | 
-| directorySeparator | Depends on your system, like '/' or '\\' | 
-| verbose | displays messages on console (true), or not (false) | 
-| threads |  number of simultanous asynchronous tasks | 
-| taskDelay | delay before watching for new task when none found |
-| watchers | number of filesystem event watchers allowed for the app. Most recent directories will be watched | 
-| secretKey | passphrase for encrypting users password in database | 
-| pathForNewLibraries | New libraries will be created here | 
+| API_PORT | Rest API listenning port |
+| API_SESSION_VALIDITY | in seconds, connexion will expire after inactivity |
+| DB | MongoDB connexion path |
+| DIRECTORY_SEPARATOR | Depends on your system, like '/' or '\\' |
+| VERBOSE | displays messages on console (true), or not (false) |
+| THREADS |  number of simultanous asynchronous tasks |
+| TASK_DELAY | delay before watching for new task when none found |
+| WATCHERS | number of filesystem event watchers allowed for the app. Most recent directories will be watched |
+| SECRET_KEY | passphrase for encrypting users password in database |
+| PATH_FOR_NEW_LIBRARIES | New libraries will be created here |
 
 Then launch the app:
 
@@ -60,7 +45,7 @@ Login with build-in first user api :
 [POST] http://1.2.3.4:3000/login
 
 x-www-form-urlencoded parameters :
-Login: api
+Login: admin
 Password : api
 ```
 
@@ -74,7 +59,7 @@ A library is the first level of stored data. A user can access to one or many li
 [POST] http://1.2.3.4:3000/admin/library/add
 ```
 
-Headers : 
+Headers :
 
 | Parameter | Value |
 | --- | --- |
@@ -104,4 +89,3 @@ See also the list of [contributors](https://github.com/sylvainduval/filengine/co
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
