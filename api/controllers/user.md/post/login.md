@@ -36,8 +36,4 @@
 
   OR
   * **Code:** 401 Unauthorized <br />
-    **Reason:** Bad password
-
-  OR
-  * **Code:** 500 Internal Server Error <br />
-    **Reason:** User account not found
+    **Reason:** Bad credentials
