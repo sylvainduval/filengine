@@ -21,6 +21,7 @@ Copy .env.sample to .env file at root level and edit it with your own settings:
 
 | Parameter | Description |
 | --- | --- |
+| DEV_MODE | Set *false* for production purposes, or *true* for development |
 | API_PORT | Rest API listenning port |
 | API_SESSION_VALIDITY | in seconds, connexion will expire after inactivity |
 | DB | MongoDB connexion path |

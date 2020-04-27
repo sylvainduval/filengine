@@ -17,6 +17,7 @@ var config = {}
 
 function loadConfig(cb) {
 	config = {
+		devMode: process.env.DEV_MODE,
 		apiPort: process.env.API_PORT,
 		apiSessionValidity: process.env.API_SESSION_VALIDITY,
 		db: process.env.DB,
