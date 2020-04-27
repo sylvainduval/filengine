@@ -14,15 +14,14 @@ const fileUpload = require('express-fileupload');
 const cors = require('cors');
 
 //Common
-var c = require('../includes/common');
-var sess = require('../includes/session');
+var c = require('api/includes/common');
+var sess = require('api/includes/session');
+var core = require('app/core');
 
-var core = require('../../app/core');
-
-var file = require('../controllers/file');
-var user = require('../controllers/user');
-var library = require('../controllers/library');
-var group = require('../controllers/group');
+var file = require('api/controllers/file');
+var user = require('api/controllers/user');
+var library = require('api/controllers/library');
+var group = require('api/controllers/group');
 
 module.exports = function() {
 
@@ -39,16 +38,19 @@ module.exports = function() {
 
 	// parse application/json
 	api.use(bodyParser.json())
-	
-	api.use(cors({
-	  origin: '*'
-	}));
+
+	if (core.config().devMode) {
+		api.use(cors({
+			origin: '*'
+		}));
+	}
 
 	api.use(function (req, res, next) {
-		
-		res.header("Access-Control-Allow-Origin", "*");
+
+		if (core.config().devMode) {
+			res.header("Access-Control-Allow-Origin", "*");
+		}
 		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-		//res.header('Access-Control-Allow-Methods', 'HEAD, GET, POST, OPTIONS, PUT, PATCH, DELETE');
 
 		if ( req.originalUrl != '/login' && req.originalUrl !='/register' && sess.checkAuth(req, res) == false) {
 

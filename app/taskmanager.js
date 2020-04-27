@@ -1,10 +1,6 @@
-//Database
-//var mongo = require('mongodb');
-//var monk = require('monk');
+var Task   = require('models/task'); // get our mongoose model
 
-var Task   = require('../models/task'); // get our mongoose model
-
-var core = require('./core');
+var core = require('app/core');
 //Recherche d'une nouvelle tâche toutes les 2 secondes
 //now = true (envoi immédiat) ou false (envoi après attente)
 
@@ -82,11 +78,11 @@ function launch() {
 						case 'scan':
 
 							//Module de scan
-							var scan = require('./scan.js');
+							var scan = require('app/scan.js');
 
 							if (doc.type == 'fullscan') {
 								//Gestionnaire de taches
-								var watcher = require('./watcher.js');
+								var watcher = require('app/watcher.js');
 								watcher.removeAll(doc.mediaLibrary);
 							}
 

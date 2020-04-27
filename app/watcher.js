@@ -2,14 +2,14 @@ var fs = require('fs');
 
 var chokidar = require('chokidar');
 
-var File = require('../models/file'); // get our mongoose model
-var Dir  = require('../models/dir');
-var Task = require('../models/task');
+var File = require('models/file'); // get our mongoose model
+var Dir  = require('models/dir');
+var Task = require('models/task');
 
 //Gestionnaire de taches
-var taskManager = require('./taskmanager');
+var taskManager = require('app/taskmanager');
 
-var core = require('./core');
+var core = require('app/core');
 
 //Les watchers sont stockés dans watchers[mediaLibrary ID][]
 var watchers = [];
@@ -80,7 +80,7 @@ function createScanTask(mediaLibrary, path, filename) {
 			var ppath = '';
 			var pname = "__ROOT__";
 		}
-		
+
 		if (obj.isFile() ) {
 			//Rechercher dans collecDirs l'ID du dossier
 			Dir.lib(mediaLibrary).findOne({path: ppath, name: pname}, function(err, di) {
@@ -108,14 +108,14 @@ function createScanTask(mediaLibrary, path, filename) {
 				if (di !== null) {
 					var parentId = di._id;
 					pname = pname == '__ROOT__' ? '' : DS+pname;
-					
+
 					Dir.lib(mediaLibrary).findOneAndUpdate(
 						{inode: inode},
 						{$set: {parent: parentId, name:filename, path: ppath+pname}},
 						function (err, f) {
 							if (!err) {
 
-								addWatcher(mediaLibrary, ppath+pname+DS+filename);	
+								addWatcher(mediaLibrary, ppath+pname+DS+filename);
 
 								t.recurse = true;
 								Task.findOne(t, function(err, d) {
@@ -123,7 +123,7 @@ function createScanTask(mediaLibrary, path, filename) {
 										taskManager.create(t);
 									}
 								});
-		
+
 							}
 						}
 					);
@@ -136,7 +136,7 @@ function createScanTask(mediaLibrary, path, filename) {
 		var lastIndex = path.lastIndexOf(DS);
 		var ppath = path.substr(0, lastIndex);
 		var pname = path.substr(lastIndex + 1);
-		
+
 		createScanTask(mediaLibrary, ppath, pname);
 	}
 
@@ -149,14 +149,14 @@ function addWatcher(mediaLibrary, path) {
 	var obj = fs.stat(mediaLibrary.rootPath + path, function(err, stats) {
 
 		if (err == null && stats.ino ) {
-			
+
 			if (watchers[mediaLibrary.id][stats.ino] != undefined) {
 				watchers[mediaLibrary.id][stats.ino].close();
 			}
-			
+
 			try {
-				
-				watchers[mediaLibrary.id][stats.ino] = chokidar.watch(mediaLibrary.rootPath + path, 
+
+				watchers[mediaLibrary.id][stats.ino] = chokidar.watch(mediaLibrary.rootPath + path,
 					{
 						ignored: /(^|[\/\\])\../,
 						//depth: 1,
@@ -168,7 +168,7 @@ function addWatcher(mediaLibrary, path) {
 					}
 				)
 				.on('all', (event, p) => {
-					
+
 					var now = (new Date()).getTime();
 
 					for (let c of currentActions) {
@@ -177,11 +177,11 @@ function addWatcher(mediaLibrary, path) {
 					}
 
 					currentActions.push({event: event, path: p, parent: mediaLibrary.rootPath + path, time: now});
-					
+
 					createScanTask(mediaLibrary, p.substring(mediaLibrary.rootPath.length, p.length - core.basename(p, true).length -1), core.basename(p, true) );
-					
+
 					clearOldActions();
-					
+
 				});
 
 			}
@@ -196,7 +196,7 @@ function setWatchers(mediaLibrary) {
 	core.stdout(mediaLibrary, 'Setting new watchers...');
 
 	var DS = core.config().directorySeparator;
-	
+
 	var nbWatchers = Math.round(core.config().watchers / core.config().mediaLibraries.length);
 
 	if (mediaLibrary = core.getLibrary(mediaLibrary)) {
@@ -225,7 +225,7 @@ function setWatchers(mediaLibrary) {
 
 function clearOldActions() {
 	var now = (new Date()).getTime();
-	
+
 	for (var i in currentActions) {
 		if (currentActions[i].time < now - 20000) {
 			currentActions.splice(i, 1);

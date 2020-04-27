@@ -2,25 +2,25 @@
 //Filesystem
 var fs = require('fs');
 
-var watcher = require('../../app/watcher.js');
+var watcher = require('app/watcher.js');
 
 //Models
-var Library = require('../../models/library'); // get our mongoose model
-var User = require('../../models/user');
-var Task = require('../../models/task');
-var File = require('../../models/file');
-var Dir = require('../../models/dir');
-var Group = require('../../models/group');
+var Library = require('models/library'); // get our mongoose model
+var User = require('models/user');
+var Task = require('models/task');
+var File = require('models/file');
+var Dir = require('models/dir');
+var Group = require('models/group');
 
 //Gestionnaire de taches
-var taskManager = require('../../app/taskmanager');
+var taskManager = require('app/taskmanager');
 
 
 //utilitaires communs à tous les controlleurs
-var c = require('../includes/common');
-var sess = require('../includes/session');
+var c = require('api/includes/common');
+var sess = require('api/includes/session');
 
-var core = require('../../app/core');
+var core = require('app/core');
 
 
 exports.get = function(req, res) {
@@ -65,7 +65,7 @@ exports.get = function(req, res) {
 
 exports.save = function(req, res) { //Mise à jour
 
-	var setup = require('../../app/setup');
+	var setup = require('app/setup');
 
 	var mediaLib = c.getLibrary(req);
 
@@ -152,7 +152,7 @@ exports.save = function(req, res) { //Mise à jour
 
 exports.create = function(req, res) { //Création
 
-	var setup = require('../../app/setup');
+	var setup = require('app/setup');
 
 	var insert = {}
 

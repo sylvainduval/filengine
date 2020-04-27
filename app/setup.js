@@ -1,16 +1,16 @@
-var Task = require('../models/task');
-var User = require('../models/user');
+var Task = require('models/task');
+var User = require('models/user');
 
 //Gestionnaire de taches
-var taskManager = require('./taskmanager');
+var taskManager = require('app/taskmanager');
 
 //Routes
-var routes = require('../api/routes/routes');
+var routes = require('api/routes/routes');
 
 //Sessions
-var sess = require('../api/includes/session');
+var sess = require('api/includes/session');
 
-var core = require('./core');
+var core = require('app/core');
 
 
 function createFirstScanTask(mediaLibrary) {
@@ -81,7 +81,7 @@ function init() {
 	    //Abandon de toutes les tâches en cours
 	    taskManager.cancel();
 	//Routes
-var routes = require('../api/routes/routes');
+var routes = require('api/routes/routes');
 	    //Suppression de toutes les tâches terminées
 	    taskManager.flushComplete();
 
