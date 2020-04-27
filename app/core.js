@@ -5,12 +5,12 @@ var mongoose = require('mongoose');
 var fs = require('fs');
 
 //Gestionnaire de taches
-var taskManager = require('./taskmanager');
+var taskManager = require('app/taskmanager');
 
 //Models
-var File = require('../models/file'); // get our mongoose model
-var Dir  = require('../models/dir');
-var Libraries  = require('../models/library');
+var File = require('models/file'); // get our mongoose model
+var Dir  = require('models/dir');
+var Libraries  = require('models/library');
 
 //Chargement de la configuration
 var config = {}

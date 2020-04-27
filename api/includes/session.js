@@ -3,9 +3,9 @@
 var jwt = require('jsonwebtoken');
 //var bcrypt = require('bcryptjs');
 
-var core = require('../../app/core');
+var core = require('app/core');
 //Models
-var Session = require('../../models/session'); // get our mongoose model
+var Session = require('models/session'); // get our mongoose model
 
 //Données des sessions courantes. Ex : librairies autorisées.
 var sessions = [];

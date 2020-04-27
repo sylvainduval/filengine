@@ -1,7 +1,5 @@
-var core = require('../../app/core');
-
-var sess = require('../includes/session');
-
+var core = require('app/core');
+var sess = require('api/includes/session');
 
 function responseJSON(res, obj, status) {
 		res.status(status);

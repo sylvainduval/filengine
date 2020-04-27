@@ -6,16 +6,13 @@ var jwt = require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
 
 //Models
-var User   = require('../../models/user'); // get our mongoose model
-var Group = require('../../models/group');
+var User = require('models/user'); // get our mongoose model
+var Group = require('models/group');
 
 //utilitaires communs à tous les controlleurs
-var c = require('../includes/common');
-var sess = require('../includes/session');
-
-var core = require('../../app/core');
-
-
+var c = require('api/includes/common');
+var sess = require('api/includes/session');
+var core = require('app/core');
 
 function getUser(userId, cb) {
 

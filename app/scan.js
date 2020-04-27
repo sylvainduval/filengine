@@ -1,16 +1,11 @@
-//var mongo = require('mongodb');
-//var monk = require('monk');
-
 var fs = require('fs');
+var watcher = require('app/watcher.js');
 
-
-var watcher = require('./watcher.js');
-
-var core = require('./core');
+var core = require('app/core');
 
 //Models
-var File = require('../models/file'); // get our mongoose model
-var Dir  = require('../models/dir');
+var File = require('models/file'); // get our mongoose model
+var Dir  = require('models/dir');
 
 
 function Scan(params) {
@@ -21,7 +16,7 @@ function Scan(params) {
 
 
 	var DS = core.config().directorySeparator;
-	
+
 
 	for (let conf of core.config().mediaLibraries) {
 		if (conf.id == parentThis.mediaLibrary) {
@@ -53,7 +48,7 @@ function Scan(params) {
 	Dir.lib(parentThis.mediaLibrary).findOne({path: '', name: '__ROOT__'}, function(err, d) {
 		if (!err && d == null) {
 			var obj = fs.statSync(parentThis.rootPath);
-			
+
 			var r = new Dir.lib(parentThis.mediaLibrary)({
 				path: '',
 				name: '__ROOT__',
@@ -70,7 +65,7 @@ function Scan(params) {
 				}
 				else {
 					throw err;
-					return false;	
+					return false;
 				}
 			});
 		}
@@ -135,13 +130,13 @@ function Scan(params) {
 			var ppath = '';
 			var pname = "__ROOT__";
 		}
-		
+
 		Dir.lib(parentThis.mediaLibrary).findOne({path: ppath, name: pname}, function(err, di) {
 			if (err) {
 				throw err;
-				return false;	
+				return false;
 			}
-			
+
 			if (di == null) {
 				core.stdout(parentThis.mediaLibrary, 'Can\'t remove ' + path + ' (Parent not found)');
 				counterAdd('counterRemove', 'done');
@@ -157,7 +152,7 @@ function Scan(params) {
 			File.lib(parentThis.mediaLibrary).find(search, function(err, files) {
 				if (err) {
 					throw err;
-					return false;	
+					return false;
 				}
 
 				for (let f of files) {
@@ -254,7 +249,7 @@ function Scan(params) {
 							throw err;
 							return false;
 						}
-						
+
 						if (d == null) { //Le dossier n'a pas été trouvé avec son inode : il faut l'inscrire
 
 							//On doit récupérer son parent
@@ -262,18 +257,18 @@ function Scan(params) {
 								record.parent = id;
 								//Puis insérer
 								var r = new Dir.lib(parentThis.mediaLibrary)(record);
-								
-								
+
+
 								r.save(function(err) {
 									if (err) {
 										throw err;
 										return false;
 									}
-									
+
 									watcher.addWatcher(parentThis.mediaLibrary, path + DS + name);
 									core.stdout(parentThis.mediaLibrary,  'Inserting directory ' + path + DS + name + ', Inode: '+obj.ino);
 									counterAdd('counterDirs', 'done');
-																		
+
 									callback.call(this);
 									return true;
 
@@ -287,13 +282,13 @@ function Scan(params) {
 							getParent(path, name, function(id) {
 								record.parent = id;
 								//Puis insérer
-								
+
 								Dir.lib(parentThis.mediaLibrary).findOneAndUpdate({ _id: d._id},{ $set: record }, function (err) {
 									if (err) {
 										throw err;
 										return false;
-									} 
-									
+									}
+
 									core.stdout(parentThis.mediaLibrary,  'Moving directory ' + path + DS + name + ', Inode: '+obj.ino);
 									counterAdd('counterDirs', 'done');
 									callback.call(this);
@@ -314,22 +309,22 @@ function Scan(params) {
 						d.size = obj.size;
 						d.modificationDate = new Date(obj.ctimeMs);
 						d.inode = obj.ino;
-						
-						
+
+
 						Dir.lib(parentThis.mediaLibrary).findOneAndUpdate({ _id: d._id},{ $set: d }, function (err) {
 							if (err) {
 								throw err;
 								return false;
-							} 
-							
+							}
+
 							core.stdout(parentThis.mediaLibrary,  'Updating directory ' + path + DS + name + ', Inode: '+obj.ino);
-							
+
 							//watcher.addWatcher(parentThis.mediaLibrary, path + DS + name);
-							
+
 							counterAdd('counterDirs', 'done');
 							callback.call(this);
 							return true;
-							
+
 						});
 
 					}
@@ -359,7 +354,7 @@ function Scan(params) {
 					throw err;
 					return false;
 				}
-				
+
 				//Un dossier parent est trouvé pour le chemin du fichier
 				if (di !== null) {
 					var id = di._id;
@@ -389,12 +384,12 @@ function Scan(params) {
 									counterAdd('counterFiles', 'done');
 									return false;
 								}
-								
+
 
 								if (d == null) { //Le fichier n'a pas été trouvé avec son inode : il faut l'inscrire
 									record.version = 1;
-									
-									
+
+
 									var r = new File.lib(parentThis.mediaLibrary)(record);
 
 									r.save(function(err) {
@@ -402,11 +397,11 @@ function Scan(params) {
 											throw err;
 											return false;
 										}
-										
+
 										core.stdout(parentThis.mediaLibrary,  'Inserting file ' + path + DS + name + ', Inode: '+obj.ino);
 										counterAdd('counterFiles', 'done');
 										return true;
-										
+
 									});
 
 								}
@@ -445,8 +440,8 @@ function Scan(params) {
 											if (err) {
 												throw err;
 												return false;
-											} 
-											
+											}
+
 											core.stdout(parentThis.mediaLibrary,  'Moving  file ' + path + DS + name + ', Inode: '+obj.ino);
 											return true;
 										});
@@ -467,16 +462,16 @@ function Scan(params) {
 								d.size = obj.size;
 								d.modificationDate = new Date(obj.ctimeMs);
 								d.inode = obj.ino;
-								
-								
+
+
 								File.lib(parentThis.mediaLibrary).findOneAndUpdate({ _id: d._id},{ $set: d }, function (err) {
 									counterAdd('counterFiles', 'done');
-									
+
 									if (err) {
 										throw err;
 										return false;
-									} 
-									
+									}
+
 									core.stdout(parentThis.mediaLibrary,  'Updating file ' + path + DS + name + ', Inode: '+obj.ino);
 									return true;
 								});
@@ -527,7 +522,7 @@ function Scan(params) {
 				if (err) {
 					throw err;
 				}
-				
+
 				if (err || d == null) { //Pas trouvé le parent ??? Hum, Ne doit pas arriver ?
 					callback.call(this, false);
 				}
