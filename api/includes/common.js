@@ -60,7 +60,7 @@ module.exports = {
 		params.offset = params.offset ? parseInt(params.offset) : 0;
 		params.limit = params.limit ? parseInt(params.limit) : null;
 
-		schema.count({}, function(err, count) {
+		schema.estimatedDocumentCount({}, function(err, count) {
 
 			let query = schema.find({}).skip(params.offset).limit(params.limit);
 

@@ -39,7 +39,7 @@ exports.get = function(req, res) {
 					return c.responseJSON(res, {success: true, data: mediaLib}, 200);
 				}
 				else {
-					Group.find({library: mediaLib._id}, 'name entryPoints', function(err, g) {
+					Group.find({library: mediaLib._id}, 'name', function(err, g) {
 						if (err) {
 							return c.responseError(res, err, 500);
 						}
