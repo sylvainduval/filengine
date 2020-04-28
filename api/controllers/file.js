@@ -14,7 +14,6 @@ var taskManager = require('app/taskmanager');
 
 //utilitaires communs à tous les controlleurs
 var c = require('api/includes/common');
-
 var core = require('app/core');
 var abstractModelService = require('services/abstractModel');
 
@@ -23,16 +22,15 @@ exports.get = function(req, res) {
 	var id = req.params.fileId;
 
 	if (mediaLib && abstractModelService.isObjectID(id)) {
-
 		File.lib(mediaLib).findById(id)
 		.populate({ path: 'path'})
-	    .exec(function (err, d) {
-
-			if (err)
+		.exec(function (err, d) {
+			if (err) {
 				return c.responseError(res, err, 500);
-
-			if (d == null)
+			}
+			if (d == null) {
 				return c.responseError(res, 'invalid ID', 400);
+			}
 
 			return c.responseJSON(res, {success: true, data: d}, 200);
 		});
@@ -40,37 +38,31 @@ exports.get = function(req, res) {
 	else {
 		return c.responseError(res, 'invalid ID');
 	}
-
 }
 
 exports.upload = function(req, res) {
 	var mediaLib = c.getLibrary(req);
 	var idParent = req.params.parentId;
-
 	var DS = core.config().directorySeparator;
 
 	if (!abstractModelService.isObjectID(idParent)) {
 		return c.responseError(res, 'invalid ID');
 	}
-
-	if (!req.files)
-    	return c.responseError(res, 'No files were uploaded.', 400);
-
+	if (!req.files) {
+		return c.responseError(res, 'No files were uploaded.', 400);
+	}
 
 	Dir.lib(mediaLib).findById(idParent, function (err, d) {
-
-		if (err)
+		if (err) {
 			return c.responseError(res, err, 500);
-
-		if (d == null)
+		}
+		if (d === null) {
 			return c.responseError(res, 'Parent ID not found', 400);
-
-		var dest = mediaLib.rootPath + DS + d.path + DS + d.name;
-
+		}
+		let dest = mediaLib.rootPath + DS + d.path + DS + d.name;
 		let f = req.files.file;
 
-		  // Use the mv() method to place the file somewhere on your server
-		 f.mv(dest + DS + f.name, function(err) {
+		f.mv(dest + DS + f.name, function(err) {
 			if (err) {
 				return c.responseError(res, err, 500);
 			}
