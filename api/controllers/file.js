@@ -70,23 +70,18 @@ exports.upload = function(req, res) {
 		let f = req.files.file;
 
 		  // Use the mv() method to place the file somewhere on your server
-		 f.mv(dest+DS+f.name, function(err) {
-
-		    if (err)
-		      return c.responseError(res, err, 500);
-
-		    //On retourne la tâche du rescan du dossier
-		    if (watcher.isWatched(mediaLib.id, d.inode)) {
-
-				taskManager.get(mediaLib, 'scan', d.path + DS + d.name, function(task, err) {
-
-					if (err)
-						return c.responseError(res, err, 500);
-
-					return c.responseJSON(res, {success: true, data: task}, 201);
-				});
+		 f.mv(dest + DS + f.name, function(err) {
+			if (err) {
+				return c.responseError(res, err, 500);
 			}
-			else {
+			taskManager.get(mediaLib, 'scan', d.path + DS + d.name, function(task, err) {
+				if (err) {
+					return c.responseError(res, err, 500);
+				}
+				if (task !== null) {
+					return c.responseJSON(res, {success: true, data: task}, 201);
+				}
+
 				taskManager.create({
 					'type': 'scan',
 					'mediaLibrary': mediaLib.id,
@@ -94,18 +89,12 @@ exports.upload = function(req, res) {
 					'recurse': false,
 					'priority': 4
 				}, function(task, err) {
-
-					if (err)
+					if (err) {
 						return c.responseError(res, err, 500);
-
+					}
 					return c.responseJSON(res, {success: true, data: task}, 201);
 				});
-
-			}
-
-
-		  });
-
+			});
+		});
 	});
-
 }

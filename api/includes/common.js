@@ -2,20 +2,18 @@ var core = require('app/core');
 var sess = require('api/includes/session');
 
 function responseJSON(res, obj, status) {
-		res.status(status);
-		res.json(obj);
-
-		return res;
+	res.status(status);
+	res.json(obj);
+	res.send();
 }
 
 function responseError(res, err, status) {
-	if (typeof(status) == "undefined")
+	if (typeof(status) == 'undefined') {
 		status = 400;
-
+	}
 	res.status(status);
 	res.json({error: err});
-
-	return res;
+	res.send();
 }
 
 function responseInt(cb, err, data, code) {
