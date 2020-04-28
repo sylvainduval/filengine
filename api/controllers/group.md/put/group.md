@@ -28,8 +28,6 @@
    **Optionnal:**
 
    `name=[string]`<br />
-   `dirs=[object]` JSON object of root directories for the group. Example: `["5aef10be613fc835dd6daf3f", "5af17092b732c30edca0dad4"]`
-Send an empty table to clear `[]`<br />
 
 * **Success Response:**
 

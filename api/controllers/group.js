@@ -7,6 +7,7 @@ var Dir = require('models/dir');
 var c = require('api/includes/common');
 var sess = require('api/includes/session');
 var core = require('app/core');
+var abstractModelService = require('services/abstractModel');
 
 function getGroup(groupId, cb) {
 
@@ -55,7 +56,7 @@ function getGroups(params, cb) {
 	let schema = Group.find(find)
 					.populate({ path: 'library', select: 'id active' })
 
-	c.stdListQuery(schema, params, function(err, r) {
+	abstractModelService.stdListQuery(schema, params, function(err, r) {
 		if (err)
 			c.responseInt(cb, err, null, 500);
 		else
@@ -72,11 +73,11 @@ module.exports = {
 
 	//Méthodes de l'API
 	get: function(req, res) {
-	    let groupId = req.params.groupId ? c.ObjectID(req.params.groupId) : false;
+		let groupId = req.params.groupId;
 
-	    if (groupId == false)
-	        return c.responseError(res, 'Wrong parameters', 400);
-
+		if (!abstractModelService.isObjectID(groupId)) {
+			return c.responseError(res, 'Wrong parameters', 400);
+		}
 
 	    getGroup(groupId, function(err, data, code) {
 		    if (code >= 400) {
@@ -90,16 +91,13 @@ module.exports = {
 	},
 
 	save: function(req, res) {
-	    let groupId = req.params.groupId ? c.ObjectID(req.params.groupId) : false;
-	    let dirs = req.body.dirs ? JSON.parse(decodeURIComponent(req.body.dirs)) : null;
-
-	    var update = {}
-
-	    update.name = req.body.name ? req.body.name.trim() : null;
-
-
-	    if (update.name == null || groupId == false)
-	        return c.responseError(res, 'Wrong parameters', 400);
+		let groupId = req.params.groupId;
+		var update = {
+			name: req.body.name ? req.body.name.trim() : null
+		}
+		if (update.name == null || !abstractModelService.isObjectID(groupId)) {
+			return c.responseError(res, 'Wrong parameters', 400);
+		}
 
 	    if (!sess.getSession(req).isAdmin)
 	        return c.responseError(res, 'Forbidden', 400);
@@ -120,14 +118,13 @@ module.exports = {
 
 
 	create: function(req, res) {
-
-	    var insert = {}
-
-	    insert.library = req.body.library ? c.ObjectID(req.body.library) : false;
-	    insert.name = req.body.name ? req.body.name.trim() : null;
-
-	    if (insert.library == false || insert.name == null)
-	        return c.responseError(res, 'Wrong parameters', 400);
+		var insert = {
+			library: req.body.library,
+			name: req.body.name ? req.body.name.trim() : null
+		}
+		if (!abstractModelService.isObjectID(insert.library) || insert.name == null) {
+			return c.responseError(res, 'Wrong parameters', 400);
+		}
 
 	    if (!sess.getSession(req).isAdmin)
 	    	return c.responseError(res, 'Forbidden', 400);
@@ -154,7 +151,7 @@ module.exports = {
 		params.library = req.query.library ? req.query.library : null;
 		params.req = req;
 
-		if (params.library != null && !c.ObjectID(params.library)) {
+		if (params.library != null && !abstractModelService.isObjectID(params.library)) {
 			params.library = core.getLibrary(params.library)._id;
 		}
 

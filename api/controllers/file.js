@@ -16,13 +16,13 @@ var taskManager = require('app/taskmanager');
 var c = require('api/includes/common');
 
 var core = require('app/core');
-
+var abstractModelService = require('services/abstractModel');
 
 exports.get = function(req, res) {
 	var mediaLib = c.getLibrary(req);
-	var id = c.ObjectID(req.params.fileId);
+	var id = req.params.fileId;
 
-	if (mediaLib && id) {
+	if (mediaLib && abstractModelService.isObjectID(id)) {
 
 		File.lib(mediaLib).findById(id)
 		.populate({ path: 'path'})
@@ -45,9 +45,13 @@ exports.get = function(req, res) {
 
 exports.upload = function(req, res) {
 	var mediaLib = c.getLibrary(req);
-	var idParent = c.ObjectID(req.params.parentId);
+	var idParent = req.params.parentId;
 
 	var DS = core.config().directorySeparator;
+
+	if (!abstractModelService.isObjectID(idParent)) {
+		return c.responseError(res, 'invalid ID');
+	}
 
 	if (!req.files)
     	return c.responseError(res, 'No files were uploaded.', 400);
@@ -76,7 +80,6 @@ exports.upload = function(req, res) {
 
 				taskManager.get(mediaLib, 'scan', d.path + DS + d.name, function(task, err) {
 
-					console.log('watched');
 					if (err)
 						return c.responseError(res, err, 500);
 
@@ -84,7 +87,6 @@ exports.upload = function(req, res) {
 				});
 			}
 			else {
-
 				taskManager.create({
 					'type': 'scan',
 					'mediaLibrary': mediaLib.id,

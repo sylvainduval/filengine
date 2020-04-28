@@ -21,6 +21,7 @@ var c = require('api/includes/common');
 var sess = require('api/includes/session');
 
 var core = require('app/core');
+var abstractModelService = require('services/abstractModel');
 
 
 exports.get = function(req, res) {
@@ -272,7 +273,7 @@ exports.list = function(req, res) {
 
 		let schema = Library.find(find,'id active');
 
-		c.stdListQuery(schema, params, function(err, r) {
+		abstractModelService.stdListQuery(schema, params, function(err, r) {
 			if (err)
 				return c.responseError(res, err, 500);
 			else

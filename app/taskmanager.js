@@ -25,7 +25,7 @@ function create(params, callback) {
 	params.processing = false;
 	params.complete = false;
 	params.error = null;
-
+	//TODO : tester si une tâche similaire n'est pas déjà en attente
 	var t = new Task(params);
 
 	t.save(function(err) {

@@ -13,6 +13,7 @@ var Group = require('models/group');
 var c = require('api/includes/common');
 var sess = require('api/includes/session');
 var core = require('app/core');
+var abstractModelService = require('services/abstractModel');
 
 function getUser(userId, cb) {
 
@@ -204,13 +205,13 @@ module.exports = {
 	},
 
 	save: function(req, res) {
-		const id            = c.ObjectID(req.params.userId); //Gérer le droit....
-		const libraries     = req.body.libraries     ? JSON.parse(decodeURIComponent(req.body.libraries)) : null;
-		const groups 		= req.body.groups  		 ? JSON.parse(decodeURIComponent(req.body.groups)) : null;
-		const isAdmin       = req.body.isAdmin       ? req.body.isAdmin : null;
+		const id = abstractModelService.isObjectID(req.params.userId) ? req.params.userId : null; //Gérer le droit....
+		const libraries = req.body.libraries ? JSON.parse(decodeURIComponent(req.body.libraries)) : null;
+		const groups = req.body.groups ? JSON.parse(decodeURIComponent(req.body.groups)) : null;
+		const isAdmin = req.body.isAdmin ? req.body.isAdmin : null;
 		const isContributor = req.body.isContributor ? req.body.isContributor : null;
-		const email         = req.body.email && req.body.email != null       ? req.body.email : null;
-		const password      = req.body.password && req.body.password != null ? bcrypt.hashSync(req.body.password, 8) : null;
+		const email = req.body.email && req.body.email != null ? req.body.email : null;
+		const password = req.body.password && req.body.password != null ? bcrypt.hashSync(req.body.password, 8) : null;
 
 		//Seul le user lui-même ou un admin peut éditer un user
 		if (sess.getSession(req).isAdmin == false && sess.getSession(req).id != id)
@@ -302,7 +303,11 @@ module.exports = {
 	},
 
 	get: function(req, res) {
-		const id = c.ObjectID(req.params.userId);
+		let id = req.params.userId;
+
+		if (!abstractModelService.isObjectID(id)) {
+			return c.responseError(res, 'User not found', 400);
+		}
 
 		getUser(id, function(err, data, code) {
 		    if (code >= 400) {
@@ -316,7 +321,11 @@ module.exports = {
 	},
 
 	delete: function(req, res) {
-		const id = c.ObjectID(req.params.userId);
+		let id = req.params.userId;
+
+		if (!abstractModelService.isObjectID(id)) {
+			return c.responseError(res, 'User not found', 400);
+		}
 
 		if (sess.getSession(req).isAdmin == false) {
 			return c.responseError(res, 'Forbidden: only admin can delete user', 403);
@@ -402,7 +411,7 @@ module.exports = {
 
 		let schema = User.find(find, 'login email isAdmin isContributor');
 
-		c.stdListQuery(schema, params, function(err, r) {
+		abstractModelService.stdListQuery(schema, params, function(err, r) {
 			if (err)
 				return c.responseError(res, err, 500);
 			else
