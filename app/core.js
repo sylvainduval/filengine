@@ -36,15 +36,13 @@ function loadConfig(cb) {
 		useCreateIndex: true
 	}); // connect to database
 
-
-		loadLibraries(function() {
-
-			File.buildLibraries(config.mediaLibraries);
-			Dir.buildLibraries(config.mediaLibraries);
-
-			if (typeof(cb) == 'function')
-				cb.call(this);
-		});
+	loadLibraries(function() {
+		File.buildLibraries(config.mediaLibraries);
+		Dir.buildLibraries(config.mediaLibraries);
+		if (typeof(cb) == 'function') {
+			cb.call(this);
+		}
+	});
 }
 
 function loadLibraries(cb) {

@@ -13,6 +13,8 @@ const fileUpload = require('express-fileupload');
 
 const cors = require('cors');
 
+const { handleError } = require('helpers/error');
+
 //Common
 var c = require('api/includes/common');
 var sess = require('api/includes/session');
@@ -23,15 +25,15 @@ var user = require('api/controllers/user');
 var library = require('api/controllers/library');
 var group = require('api/controllers/group');
 
+
+
 module.exports = function() {
-
-	//Démarrage API
-	api.listen(core.config().apiPort);
-	core.stdout(null, "API listening on port: "+core.config().apiPort);
-
 
 	//Upload
 	api.use(fileUpload());
+
+
+	api.use(express.json());
 
 	// parse application/x-www-form-urlencoded
 	api.use(bodyParser.urlencoded({ extended: false }))
@@ -45,8 +47,7 @@ module.exports = function() {
 		}));
 	}
 
-	api.use(function (req, res, next) {
-
+	api.use(function (err, req, res, next) {
 		if (core.config().devMode) {
 			res.header("Access-Control-Allow-Origin", "*");
 		}
@@ -56,8 +57,9 @@ module.exports = function() {
 
 			return c.responseError(res, 'Invalid Token. Please login.', 401);
 		}
-		else
+		else {
 			next();
+		}
 	});
 
 	//Action sur les librairies
@@ -110,4 +112,17 @@ module.exports = function() {
 		.get(user.get)
 		.put(user.save)
 		.delete(user.delete);
+
+	api.use(function (err, req, res, next) {
+		/*
+		Use it as bellow in your controllers :
+		const { handleError, ErrorHandler } = require('helpers/error');
+
+		throw new ErrorHandler(401, 'this is an error');
+		*/
+		handleError(err, res);
+	});
+
+	api.listen(core.config().apiPort);
+	core.stdout(null, "API listening on port: "+core.config().apiPort);
 };

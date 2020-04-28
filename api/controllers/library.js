@@ -15,7 +15,6 @@ var Group = require('models/group');
 //Gestionnaire de taches
 var taskManager = require('app/taskmanager');
 
-
 //utilitaires communs à tous les controlleurs
 var c = require('api/includes/common');
 var sess = require('api/includes/session');
