@@ -22,82 +22,111 @@ var sess = require('api/includes/session');
 
 var core = require('app/core');
 var abstractModelService = require('services/abstractModel');
-
+var libraryService = require('services/library');
 
 exports.get = function(req, res) {
-	var mediaLib = c.getLibrary(req).toObject();
+	let session = sess.getSession(req);
+	libraryService.getLibrary(session, req.params.mediaLibraryId, function(mediaLib) {
+		if (sess.getSession(req).libraries) {
+			//Libraries autorisées pour l'utilisateur
+			var found = false;
+			for (let j of sess.getSession(req).libraries) {
 
-	if (sess.getSession(req).libraries) {
-		//Libraries autorisées pour l'utilisateur
-		var found = false;
-		for (let j of sess.getSession(req).libraries) {
+				if (mediaLib.id == j) {
+					found = true;
 
-			if (mediaLib.id == j) {
-				found = true;
-
-				if (!sess.getSession(req).isAdmin) {
-					mediaLib.rootPath = undefined; // Inutile de divulguer ça à des non admin...
-					return c.responseJSON(res, {success: true, data: mediaLib}, 200);
-				}
-				else {
-					Group.find({library: mediaLib._id}, 'name', function(err, g) {
-						if (err) {
-							return c.responseError(res, err, 500);
-						}
-
-						mediaLib.groups = g;
-
+					if (!sess.getSession(req).isAdmin) {
+						mediaLib.rootPath = undefined; // Inutile de divulguer ça à des non admin...
 						return c.responseJSON(res, {success: true, data: mediaLib}, 200);
-					});
+					}
+					else {
+						Group.find({library: mediaLib._id}, 'name', function(err, g) {
+							if (err) {
+								return c.responseError(res, err, 500);
+							}
+
+							mediaLib.groups = g;
+
+							return c.responseJSON(res, {success: true, data: mediaLib}, 200);
+						});
+					}
+
+					break;
 				}
-
-				break;
 			}
+			if (found == false)
+				return c.responseError(res, 'invalid ID', 400);
 		}
-		if (found == false)
+		else {
 			return c.responseError(res, 'invalid ID', 400);
-	}
-	else {
-		return c.responseError(res, 'invalid ID', 400);
-	}
-
-
+		}
+	});
 }
 
 exports.save = function(req, res) { //Mise à jour
 
 	var setup = require('app/setup');
+	let session = sess.getSession(req);
+	libraryService.getLibrary(session, req.params.mediaLibraryId, function(mediaLib) {
 
-	var mediaLib = c.getLibrary(req);
+		var update = {}
 
-	var update = {}
+		if (mediaLib && mediaLib.active == false && (req.body.active == 'true') )
+			console.log('A reactiver');
 
-	if (mediaLib && mediaLib.active == false && (req.body.active == 'true') )
-		console.log('A reactiver');
+		update.fullScanDelay = req.body.fullScanDelay ? parseInt(req.body.fullScanDelay) : mediaLib.fullScanDelay;
+		update.active = req.body.active ? (req.body.active == 'true')  : mediaLib.active;
 
-	update.fullScanDelay = req.body.fullScanDelay ? parseInt(req.body.fullScanDelay) : mediaLib.fullScanDelay;
-	update.active = req.body.active ? (req.body.active == 'true')  : mediaLib.active;
+		if (update.fullScanDelay == null)
+			delete update.fullScanDelay;
 
-	if (update.fullScanDelay == null)
-		delete update.fullScanDelay;
+		if (update.active == null)
+			update.active = false;
 
-	if (update.active == null)
-		update.active = false;
+		var id;
 
-	var id;
+		if (mediaLib === false && sess.getSession(req).isAdmin) {
 
-	if (mediaLib === false && sess.getSession(req).isAdmin) {
+			User.findOne({ _id: sess.getSession(req).id}, function (err, data) {
+				if (err) {
+					return c.responseError(res, err, 500);
+				}
 
-		User.findOne({ _id: sess.getSession(req).id}, function (err, data) {
-			if (err) {
-				return c.responseError(res, err, 500);
-			}
+				if (data == null)
+					return c.responseError(res, 'Not found', 400);
 
-			if (data == null)
-				return c.responseError(res, 'Not found', 400);
+				if (data.libraries.indexOf(req.params.mediaLibraryId) != -1 || sess.getSession(req).isSuperAdmin)
+					id = req.params.mediaLibraryId;
 
-			if (data.libraries.indexOf(req.params.mediaLibraryId) != -1 || sess.getSession(req).isSuperAdmin)
-				id = req.params.mediaLibraryId;
+				Library.findOneAndUpdate({ id: id},{ $set: update }, {new: true}, function (err, data) {
+					if (err) {
+						return c.responseError(res, err, 500);
+					}
+
+					if (data == null)
+						return c.responseError(res, 'Not found', 400);
+
+
+					//Recharger la conf...
+					core.loadLibraries(function() {
+
+						if (data.active == true) {
+							Dir.buildLibraries([data]);
+							File.buildLibraries([data]);
+
+							//Si la lib vient d'êtr ré-activée, il faudrait lancer un scan et le planifier...
+							setup.createFirstScanTask(data);
+						}
+
+						return c.responseJSON(res, { success: true, data: data }, 200);
+					});
+
+				});
+			});
+
+		}
+		else {
+			id = mediaLib.id;
 
 			Library.findOneAndUpdate({ id: id},{ $set: update }, {new: true}, function (err, data) {
 				if (err) {
@@ -107,48 +136,19 @@ exports.save = function(req, res) { //Mise à jour
 				if (data == null)
 					return c.responseError(res, 'Not found', 400);
 
+				if (data.active == false) {
+					Task.deleteMany({mediaLibrary : id, "processing" : false, "complete" : false}, function (err, data) {});
+				}
 
 				//Recharger la conf...
 				core.loadLibraries(function() {
 
-					if (data.active == true) {
-						Dir.buildLibraries([data]);
-						File.buildLibraries([data]);
-
-						//Si la lib vient d'êtr ré-activée, il faudrait lancer un scan et le planifier...
-						setup.createFirstScanTask(data);
-					}
-
 					return c.responseJSON(res, { success: true, data: data }, 200);
 				});
-
 			});
-		});
 
-	}
-	else {
-		id = mediaLib.id;
-
-		Library.findOneAndUpdate({ id: id},{ $set: update }, {new: true}, function (err, data) {
-			if (err) {
-				return c.responseError(res, err, 500);
-			}
-
-			if (data == null)
-				return c.responseError(res, 'Not found', 400);
-
-			if (data.active == false) {
-				Task.deleteMany({mediaLibrary : id, "processing" : false, "complete" : false}, function (err, data) {});
-			}
-
-			//Recharger la conf...
-			core.loadLibraries(function() {
-
-				return c.responseJSON(res, { success: true, data: data }, 200);
-			});
-		});
-
-	}
+		}
+	});
 }
 
 exports.create = function(req, res) { //Création
